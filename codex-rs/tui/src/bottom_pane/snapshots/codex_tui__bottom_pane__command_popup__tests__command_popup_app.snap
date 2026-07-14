@@ -5,16 +5,16 @@ expression: "format!(\"{buf:?}\")"
 Buffer {
     area: Rect { x: 0, y: 0, width: 72, height: 2 },
     content: [
-        "  /app      continue this session in Codex Desktop                      ",
-        "  /approve  approve one retry of a recent auto-review denial            ",
+        "  /app      在 Codex 桌面端继续此会话                                   ",
+        "  /approve  批准重试最近一次被自动审查拒绝的操作                        ",
     ],
     styles: [
         x: 0, y: 0, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
         x: 2, y: 0, fg: Cyan, bg: Reset, underline: Reset, modifier: BOLD,
-        x: 50, y: 0, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
+        x: 37, y: 0, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
         x: 3, y: 1, fg: Reset, bg: Reset, underline: Reset, modifier: BOLD,
         x: 6, y: 1, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
         x: 12, y: 1, fg: Reset, bg: Reset, underline: Reset, modifier: DIM,
-        x: 60, y: 1, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
+        x: 48, y: 1, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
     ]
 }

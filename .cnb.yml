@@ -1,0 +1,10 @@
+$:
+  vscode:
+    - docker:
+        image: cnbcool/default-dev-env:latest
+      services:
+        - vscode
+        - docker
+      stages:
+        - name: 配置 Codex 开发环境
+          script: bash .ide/setup-codex.sh

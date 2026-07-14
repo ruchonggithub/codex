@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+exec cargo +1.95.0 run --manifest-path "${repo_root}/codex-rs/Cargo.toml" --bin codex -- "$@"

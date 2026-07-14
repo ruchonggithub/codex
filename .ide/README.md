@@ -11,13 +11,26 @@
 
 ## CNB 环境变量
 
-在 CNB 的个人设置中添加：
+先在私有密钥仓库中创建一个 YAML 文件，例如 `codex.yml`：
 
-- `OPENAI_API_KEY`：Codex 服务的 API 密钥。
-- `CODEX_BASE_URL`：可选，用于覆盖配置中的默认服务地址。
-- `CODEX_NPM_VERSION`：可选，用于覆盖默认安装的 Codex CLI 版本。
+```yaml
+OPENAI_API_KEY: <Codex 服务的 API 密钥>
+```
 
-密钥只通过环境变量注入，不提交 `auth.json`。
+然后打开 **个人设置 > 云原生开发 > 个人环境变量**，引用该密钥文件并限制为当前仓库：
+
+```yaml
+- imports: https://cnb.cool/<你的密钥仓库>/-/blob/main/codex.yml
+  use_in_slugs:
+    - ruchong/ruchong/trae/codex
+```
+
+还支持以下可选环境变量：
+
+- `CODEX_BASE_URL`：覆盖配置中的默认服务地址。
+- `CODEX_NPM_VERSION`：覆盖默认安装的 Codex CLI 版本。
+
+密钥只通过 CNB 环境变量注入，不提交 `auth.json`。
 
 ## 常用命令
 

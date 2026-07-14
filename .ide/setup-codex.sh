@@ -64,7 +64,7 @@ export PATH="${bin_dir}:${PATH}"
 export CODEX_UNSAFE_ALLOW_NO_SANDBOX="${CODEX_UNSAFE_ALLOW_NO_SANDBOX:-1}"
 
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then
-  printf '提示：请在 CNB 个人设置的环境变量中添加 OPENAI_API_KEY，然后重启云原生开发环境。\n'
+  printf '提示：请在 CNB 个人环境变量中引用包含 OPENAI_API_KEY 的密钥文件，然后重启云原生开发环境。\n'
 fi
 
 active_base_url="$(sed -n 's/^base_url = "\(.*\)"/\1/p' "${config_path}" | head -n 1)"

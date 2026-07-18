@@ -1,0 +1,61 @@
+name: codexCn build
+
+on:
+  push:
+    branches:
+      - codexCn
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Linux x86_64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: codex-rs
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ci
+      - uses: dtolnay/rust-toolchain@e081816240890017053eacbb1bdf337761dc5582 # 1.95.0
+
+      - name: Install Linux build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            binutils \
+            libcap-dev \
+            pkg-config
+
+      - name: Build Codex
+        run: cargo build --locked --release --bin codex
+
+      - name: Package Codex
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_dir="${GITHUB_WORKSPACE}/dist/codexCn-linux-x86_64"
+          mkdir -p "$artifact_dir"
+          install -m 0755 "${CARGO_TARGET_DIR}/release/codex" "$artifact_dir/codex"
+          tar -C "${GITHUB_WORKSPACE}/dist" \
+            -czf "${GITHUB_WORKSPACE}/dist/codexCn-linux-x86_64.tar.gz" \
+            codexCn-linux-x86_64
+
+      - name: Upload Codex artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: codexCn-linux-x86_64
+          path: dist/codexCn-linux-x86_64.tar.gz
+          if-no-files-found: error

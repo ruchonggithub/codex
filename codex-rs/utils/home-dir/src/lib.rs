@@ -4,12 +4,12 @@ use std::path::PathBuf;
 
 /// Returns the path to the Codex configuration directory, which can be
 /// specified by the `CODEX_HOME` environment variable. If not set, defaults to
-/// `~/.codex`.
+/// the directory containing the current Codex executable.
 ///
 /// - If `CODEX_HOME` is set, the value must exist and be a directory. The
 ///   value will be canonicalized and this function will Err otherwise.
-/// - If `CODEX_HOME` is not set, this function does not verify that the
-///   directory exists.
+/// - If the executable directory cannot be resolved, this falls back to
+///   `~/.codex`.
 pub fn find_codex_home() -> std::io::Result<AbsolutePathBuf> {
     let codex_home_env = std::env::var("CODEX_HOME")
         .ok()
@@ -50,14 +50,23 @@ fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<Abs
             }
         }
         None => {
-            let mut p = home_dir().ok_or_else(|| {
-                std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    "Could not find home directory",
-                )
-            })?;
-            p.push(".codex");
-            AbsolutePathBuf::from_absolute_path(p)
+            let executable_dir = std::env::current_exe()
+                .ok()
+                .and_then(|executable| executable.parent().map(std::path::Path::to_path_buf));
+            let codex_home = match executable_dir {
+                Some(executable_dir) => executable_dir,
+                None => {
+                    let mut fallback = home_dir().ok_or_else(|| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::NotFound,
+                            "Could not find the Codex executable or home directory",
+                        )
+                    })?;
+                    fallback.push(".codex");
+                    fallback
+                }
+            };
+            AbsolutePathBuf::from_absolute_path(codex_home)
         }
     }
 }
@@ -66,7 +75,6 @@ fn find_codex_home_from_env(codex_home_env: Option<&str>) -> std::io::Result<Abs
 mod tests {
     use super::find_codex_home_from_env;
     use codex_utils_absolute_path::AbsolutePathBuf;
-    use dirs::home_dir;
     use pretty_assertions::assert_eq;
     use std::fs;
     use std::io::ErrorKind;
@@ -123,11 +131,14 @@ mod tests {
     }
 
     #[test]
-    fn find_codex_home_without_env_uses_default_home_dir() {
+    fn find_codex_home_without_env_uses_executable_dir() {
         let resolved =
             find_codex_home_from_env(/*codex_home_env*/ None).expect("default CODEX_HOME");
-        let mut expected = home_dir().expect("home dir");
-        expected.push(".codex");
+        let executable = std::env::current_exe().expect("current executable");
+        let expected = executable
+            .parent()
+            .expect("current executable should have a parent")
+            .to_path_buf();
         let expected = AbsolutePathBuf::from_absolute_path(expected).expect("absolute home");
         assert_eq!(resolved, expected);
     }

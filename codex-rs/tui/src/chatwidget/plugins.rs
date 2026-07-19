@@ -64,8 +64,8 @@ impl ChatWidget {
     pub(crate) fn add_plugins_output(&mut self) {
         if !self.config.features.enabled(Feature::Plugins) {
             self.add_info_message(
-                "Plugins are disabled.".to_string(),
-                Some("Enable the plugins feature to use /plugins.".to_string()),
+                "插件功能已禁用。".to_string(),
+                Some("请启用插件功能以使用 /plugins。".to_string()),
             );
             return;
         }
@@ -285,10 +285,10 @@ impl ChatWidget {
         let tx = self.app_event_tx.clone();
         let cwd = self.config.cwd.to_path_buf();
         let view = CustomPromptView::new(
-            "Add marketplace".to_string(),
-            "owner/repo, git URL, or local marketplace path".to_string(),
+            "添加市场".to_string(),
+            "owner/repo、Git URL 或本地市场路径".to_string(),
             String::new(),
-            Some("Examples: owner/repo, git URL, ./marketplace".to_string()),
+            Some("示例：owner/repo、Git URL、./marketplace".to_string()),
             Box::new(move |source: String| {
                 let source = source.trim().to_string();
                 if source.is_empty() {
@@ -461,8 +461,8 @@ impl ChatWidget {
                 self.plugin_install_auth_flow = None;
                 if self.plugin_install_apps_needing_auth.is_empty() {
                     self.add_info_message(
-                        format!("Installed {plugin_display_name} plugin."),
-                        Some("No additional app authentication is required.".to_string()),
+                        format!("已安装插件 {plugin_display_name}。"),
+                        Some("不需要额外的应用身份验证。".to_string()),
                     );
                     true
                 } else {
@@ -473,9 +473,9 @@ impl ChatWidget {
                         .collect::<Vec<_>>()
                         .join(", ");
                     self.add_info_message(
-                        format!("Installed {plugin_display_name} plugin."),
+                        format!("已安装插件 {plugin_display_name}。"),
                         Some(format!(
-                            "{} app(s) still need authentication: {app_names}",
+                            "仍有 {} 个应用需要身份验证：{app_names}",
                             self.plugin_install_apps_needing_auth.len()
                         )),
                     );
@@ -520,17 +520,14 @@ impl ChatWidget {
                 self.newly_installed_marketplace_tab_id =
                     (!response.already_added).then_some(marketplace_tab_id);
                 let message = if response.already_added {
-                    format!(
-                        "Marketplace {} is already added.",
-                        response.marketplace_name
-                    )
+                    format!("市场 {} 已添加。", response.marketplace_name)
                 } else {
-                    format!("Added marketplace {}.", response.marketplace_name)
+                    format!("已添加市场 {}。", response.marketplace_name)
                 };
                 self.add_info_message(
                     message,
                     Some(format!(
-                        "Marketplace root: {}",
+                        "市场根目录：{}",
                         response.installed_root.as_path().display()
                     )),
                 );
@@ -564,15 +561,12 @@ impl ChatWidget {
             Ok(response) => {
                 self.plugins_active_tab_id = Some(ALL_PLUGINS_TAB_ID.to_string());
                 self.add_info_message(
-                    format!("Removed marketplace {marketplace_display_name}."),
+                    format!("已移除市场 {marketplace_display_name}。"),
                     Some(match response.installed_root {
                         Some(installed_root) => {
-                            format!("Marketplace root: {}", installed_root.as_path().display())
+                            format!("市场根目录：{}", installed_root.as_path().display())
                         }
-                        None => format!(
-                            "Removed marketplace config for {}.",
-                            response.marketplace_name
-                        ),
+                        None => format!("已移除市场 {} 的配置。", response.marketplace_name),
                     }),
                 );
             }
@@ -617,27 +611,22 @@ impl ChatWidget {
                 let error_count = response.errors.len();
                 if selected_count == 0 {
                     self.add_info_message(
-                        "No configured Git marketplaces to upgrade.".to_string(),
-                        Some("Only configured Git marketplaces can be upgraded.".to_string()),
+                        "没有可升级的已配置 Git 市场。".to_string(),
+                        Some("只能升级已配置的 Git 市场。".to_string()),
                     );
                     return;
                 }
 
                 if upgraded_count == 0 && error_count == 0 {
                     let message = if selected_count == 1 {
-                        format!(
-                            "Marketplace {} is already up to date.",
-                            response.selected_marketplaces[0]
-                        )
+                        format!("市场 {} 已是最新版本。", response.selected_marketplaces[0])
                     } else {
-                        format!(
-                            "Checked {selected_count} marketplaces; all are already up to date."
-                        )
+                        format!("已检查 {selected_count} 个市场，全部已是最新版本。")
                     };
                     self.add_info_message(
                         message,
                         Some(format!(
-                            "Checked: {}",
+                            "已检查：{}",
                             response.selected_marketplaces.join(", ")
                         )),
                     );
@@ -645,15 +634,10 @@ impl ChatWidget {
                 }
 
                 if upgraded_count > 0 {
-                    let noun = if upgraded_count == 1 {
-                        "marketplace"
-                    } else {
-                        "marketplaces"
-                    };
                     self.add_info_message(
-                        format!("Upgraded {upgraded_count} {noun}."),
+                        format!("已升级 {upgraded_count} 个市场。"),
                         Some(format!(
-                            "Updated roots: {}",
+                            "已更新根目录：{}",
                             response
                                 .upgraded_roots
                                 .iter()
@@ -665,13 +649,8 @@ impl ChatWidget {
                 }
 
                 if error_count > 0 {
-                    let noun = if error_count == 1 {
-                        "marketplace"
-                    } else {
-                        "marketplaces"
-                    };
                     self.add_error_message(format!(
-                        "Failed to upgrade {error_count} {noun}: {}",
+                        "有 {error_count} 个市场升级失败：{}",
                         response
                             .errors
                             .iter()
@@ -753,9 +732,7 @@ impl ChatWidget {
         }
 
         if let Err(err) = result {
-            self.add_error_message(format!(
-                "Failed to update plugin config for {plugin_id}: {err}"
-            ));
+            self.add_error_message(format!("无法更新插件 {plugin_id} 的配置：{err}"));
             if let PluginsCacheState::Ready(response) = self.plugins_cache_for_current_cwd() {
                 self.refresh_plugins_popup_if_open(&response);
             }
@@ -799,8 +776,8 @@ impl ChatWidget {
                 self.plugin_install_apps_needing_auth.clear();
                 self.plugin_install_auth_flow = None;
                 self.add_info_message(
-                    format!("Uninstalled {plugin_display_name} plugin."),
-                    Some("Bundled apps remain installed.".to_string()),
+                    format!("已卸载插件 {plugin_display_name}。"),
+                    Some("插件附带的应用仍保持安装。".to_string()),
                 );
             }
             Err(err) => {
@@ -860,17 +837,17 @@ impl ChatWidget {
         let current = flow.next_app_index + 1;
         let is_installed = self.plugin_install_auth_app_is_installed(app.id.as_str());
         let status_label = if is_installed {
-            "Already installed in this session."
+            "已在此会话中安装。"
         } else {
-            "Install the required Apps in ChatGPT to continue:"
+            "请在 ChatGPT 中安装所需应用后继续："
         };
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Plugins".bold()));
+        header.push(Line::from("插件".bold()));
         header.push(Line::from(
-            format!("{} plugin installed.", flow.plugin_display_name).bold(),
+            format!("插件 {} 已安装。", flow.plugin_display_name).bold(),
         ));
         header.push(Line::from(
-            format!("App setup {current}/{total}: {}", app.name).dim(),
+            format!("应用设置 {current}/{total}：{}", app.name).dim(),
         ));
         header.push(Line::from(status_label.dim()));
 
@@ -878,14 +855,14 @@ impl ChatWidget {
 
         if let Some(install_url) = app.install_url.clone() {
             let install_label = if is_installed {
-                "Manage on ChatGPT"
+                "在 ChatGPT 中管理"
             } else {
-                "Install on ChatGPT"
+                "在 ChatGPT 中安装"
             };
             items.push(SelectionItem {
                 name: install_label.to_string(),
-                description: Some("Open the ChatGPT app management page".to_string()),
-                selected_description: Some("Open the app page in your browser.".to_string()),
+                description: Some("打开 ChatGPT 应用管理页面".to_string()),
+                selected_description: Some("在浏览器中打开应用页面。".to_string()),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenUrlInBrowser {
                         url: install_url.clone(),
@@ -895,8 +872,8 @@ impl ChatWidget {
             });
         } else {
             items.push(SelectionItem {
-                name: "ChatGPT apps link unavailable".to_string(),
-                description: Some("This app did not provide an install/manage URL.".to_string()),
+                name: "ChatGPT 应用链接不可用".to_string(),
+                description: Some("此应用未提供安装/管理地址。".to_string()),
                 is_disabled: true,
                 ..Default::default()
             });
@@ -904,9 +881,9 @@ impl ChatWidget {
 
         if is_installed {
             items.push(SelectionItem {
-                name: "Continue".to_string(),
-                description: Some("This app is already installed.".to_string()),
-                selected_description: Some("Advance to the next app.".to_string()),
+                name: "继续".to_string(),
+                description: Some("此应用已安装。".to_string()),
+                selected_description: Some("继续设置下一个应用。".to_string()),
                 actions: vec![Box::new(|tx| {
                     tx.send(AppEvent::PluginInstallAuthAdvance {
                         refresh_connectors: false,
@@ -916,13 +893,9 @@ impl ChatWidget {
             });
         } else {
             items.push(SelectionItem {
-                name: "I've installed it".to_string(),
-                description: Some(
-                    "Trust your confirmation and continue to the next app.".to_string(),
-                ),
-                selected_description: Some(
-                    "Continue without waiting for refresh to complete.".to_string(),
-                ),
+                name: "我已安装".to_string(),
+                description: Some("采用你的确认并继续设置下一个应用。".to_string()),
+                selected_description: Some("无需等待刷新完成即可继续。".to_string()),
                 actions: vec![Box::new(|tx| {
                     tx.send(AppEvent::PluginInstallAuthAdvance {
                         refresh_connectors: true,
@@ -933,9 +906,9 @@ impl ChatWidget {
         }
 
         items.push(SelectionItem {
-            name: "Skip remaining app setup".to_string(),
-            description: Some("Stop this follow-up flow for this plugin.".to_string()),
-            selected_description: Some("Abandon remaining required app setup.".to_string()),
+            name: "跳过剩余应用设置".to_string(),
+            description: Some("停止此插件的后续设置流程。".to_string()),
+            selected_description: Some("放弃设置剩余的必需应用。".to_string()),
             actions: vec![Box::new(|tx| {
                 tx.send(AppEvent::PluginInstallAuthAbandon);
             })],
@@ -967,19 +940,13 @@ impl ChatWidget {
         self.plugin_install_apps_needing_auth.clear();
         if abandoned {
             self.add_info_message(
-                format!(
-                    "Skipped remaining app setup for {} plugin.",
-                    flow.plugin_display_name
-                ),
-                Some("The plugin may not be usable until required apps are installed.".to_string()),
+                format!("已跳过 {} 插件的其余应用设置。", flow.plugin_display_name),
+                Some("安装所需应用前，该插件可能无法使用。".to_string()),
             );
         } else {
             self.add_info_message(
-                format!(
-                    "Completed app setup flow for {} plugin.",
-                    flow.plugin_display_name
-                ),
-                Some("You can now continue managing plugins from /plugins.".to_string()),
+                format!("已完成 {} 插件的应用设置流程。", flow.plugin_display_name),
+                Some("现在可以通过 /plugins 继续管理插件。".to_string()),
             );
         }
 

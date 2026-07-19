@@ -380,13 +380,13 @@ impl StatusHistoryCell {
 
         vec![
             Span::from(total_fmt),
-            Span::from(" total "),
+            Span::from(" 总计 "),
             Span::from(" (").dim(),
             Span::from(input_fmt).dim(),
-            Span::from(" input").dim(),
+            Span::from(" 输入").dim(),
             Span::from(" + ").dim(),
             Span::from(output_fmt).dim(),
-            Span::from(" output").dim(),
+            Span::from(" 输出").dim(),
             Span::from(")").dim(),
         ]
     }
@@ -398,10 +398,10 @@ impl StatusHistoryCell {
         let window_fmt = format_tokens_compact(context.window);
 
         Some(vec![
-            Span::from(format!("{percent}% left")),
+            Span::from(format!("剩余 {percent}%")),
             Span::from(" (").dim(),
             Span::from(used_fmt).dim(),
-            Span::from(" used / ").dim(),
+            Span::from(" 已使用 / ").dim(),
             Span::from(window_fmt).dim(),
             Span::from(")").dim(),
         ])
@@ -416,10 +416,7 @@ impl StatusHistoryCell {
         match &state.rate_limits {
             StatusRateLimitData::Available(rows_data) => {
                 if rows_data.is_empty() {
-                    return vec![formatter.line(
-                        "Limits",
-                        vec![Span::from("not available for this account").dim()],
-                    )];
+                    return vec![formatter.line("限额", vec![Span::from("此账户不可用").dim()])];
                 }
 
                 self.rate_limit_row_lines(rows_data, available_inner_width, formatter)
@@ -428,29 +425,26 @@ impl StatusHistoryCell {
                 let mut lines =
                     self.rate_limit_row_lines(rows_data, available_inner_width, formatter);
                 lines.push(formatter.line(
-                    "Warning",
+                    "警告",
                     vec![Span::from(if state.refreshing_rate_limits {
-                        "limits may be stale - run /status again shortly."
+                        "限额数据可能已过期，请稍后再次运行 /status。"
                     } else {
-                        "limits may be stale - start new turn to refresh."
+                        "限额数据可能已过期，请开始新任务以刷新。"
                     })
                     .dim()],
                 ));
                 lines
             }
             StatusRateLimitData::Unavailable => {
-                vec![formatter.line(
-                    "Limits",
-                    vec![Span::from("not available for this account").dim()],
-                )]
+                vec![formatter.line("限额", vec![Span::from("此账户不可用").dim()])]
             }
             StatusRateLimitData::Missing => {
                 vec![formatter.line(
-                    "Limits",
+                    "限额",
                     vec![Span::from(if state.refreshing_rate_limits {
-                        "refresh requested; run /status again shortly."
+                        "已请求刷新，请稍后再次运行 /status。"
                     } else {
-                        "data not available yet"
+                        "数据暂不可用"
                     })
                     .dim()],
                 )]
@@ -493,7 +487,7 @@ impl StatusHistoryCell {
                     let base_line = Line::from(base_spans.clone());
 
                     if let Some(resets_at) = resets_at.as_ref() {
-                        let resets_span = Span::from(format!("(resets {resets_at})")).dim();
+                        let resets_span = Span::from(format!("（重置于 {resets_at}）")).dim();
                         let mut inline_spans = base_spans.clone();
                         inline_spans.push(Span::from(" ").dim());
                         inline_spans.push(resets_span.clone());
@@ -504,7 +498,7 @@ impl StatusHistoryCell {
                             lines.push(Line::from(inline_spans));
                         } else {
                             lines.push(base_line);
-                            let reset_text = format!("(resets {resets_at})");
+                            let reset_text = format!("（重置于 {resets_at}）");
                             let reset_width = formatter.value_width(available_inner_width).max(1);
                             let wrap_options =
                                 textwrap::Options::new(reset_width).break_words(false);
@@ -557,7 +551,7 @@ impl StatusHistoryCell {
         match &state.rate_limits {
             StatusRateLimitData::Available(rows) => {
                 if rows.is_empty() {
-                    push_label(labels, seen, "Limits");
+                    push_label(labels, seen, "限额");
                 } else {
                     for row in rows {
                         push_label(labels, seen, row.label.as_str());
@@ -568,10 +562,10 @@ impl StatusHistoryCell {
                 for row in rows {
                     push_label(labels, seen, row.label.as_str());
                 }
-                push_label(labels, seen, "Warning");
+                push_label(labels, seen, "警告");
             }
-            StatusRateLimitData::Unavailable => push_label(labels, seen, "Limits"),
-            StatusRateLimitData::Missing => push_label(labels, seen, "Limits"),
+            StatusRateLimitData::Unavailable => push_label(labels, seen, "限额"),
+            StatusRateLimitData::Missing => push_label(labels, seen, "限额"),
         }
     }
 }
@@ -628,22 +622,22 @@ fn status_permissions_label(
     match active_id {
         Some(BUILT_IN_PERMISSION_PROFILE_READ_ONLY) => {
             let label = if sandbox == "read-only with network access" {
-                "Read Only with network access"
+                "只读（允许网络访问）"
             } else {
-                "Read Only"
+                "只读"
             };
-            return format!("{label} ({approval})");
+            return format!("{label}（{approval}）");
         }
         Some(BUILT_IN_PERMISSION_PROFILE_WORKSPACE) => match sandbox {
             "workspace" => {
                 return format!(
-                    "Workspace{} ({approval})",
+                    "工作区{}（{approval}）",
                     workspace_root_suffix.unwrap_or("")
                 );
             }
             "workspace with network access" => {
                 return format!(
-                    "Workspace with network access{} ({approval})",
+                    "工作区（允许网络访问）{}（{approval}）",
                     workspace_root_suffix.unwrap_or("")
                 );
             }
@@ -653,40 +647,48 @@ fn status_permissions_label(
             if permission_profile == &PermissionProfile::Disabled =>
         {
             return if approval_policy == AskForApproval::Never {
-                "Full Access".to_string()
+                "完全访问".to_string()
             } else {
-                format!("No Sandbox ({approval})")
+                format!("无沙箱（{approval}）")
             };
         }
         Some(id) => {
             let sandbox = decorate_workspace_sandbox_label(sandbox, workspace_root_suffix);
-            return format!("Profile {id} ({sandbox}, {approval})");
+            return format!("配置 {id}（{sandbox}，{approval}）");
         }
         None => {}
     }
 
     if sandbox == "read-only" {
-        return format!("Read Only ({approval})");
+        return format!("只读（{approval}）");
     }
     if approval_policy == AskForApproval::OnRequest && sandbox == "workspace" {
         return format!(
-            "Workspace{} ({approval})",
+            "工作区{}（{approval}）",
             workspace_root_suffix.unwrap_or("")
         );
     }
     if approval_policy == AskForApproval::Never
         && permission_profile == &PermissionProfile::Disabled
     {
-        return "Full Access".to_string();
+        return "完全访问".to_string();
     }
     let sandbox = decorate_workspace_sandbox_label(sandbox, workspace_root_suffix);
-    format!("Custom ({sandbox}, {approval})")
+    format!("自定义（{sandbox}，{approval}）")
 }
 
 fn decorate_workspace_sandbox_label(sandbox: &str, workspace_root_suffix: Option<&str>) -> String {
+    let label = match sandbox {
+        "read-only" => "只读",
+        "read-only with network access" => "只读（允许网络访问）",
+        "workspace" => "工作区",
+        "workspace with network access" => "工作区（允许网络访问）",
+        "custom permissions with network access" => "自定义权限（允许网络访问）",
+        _ => sandbox,
+    };
     match workspace_root_suffix {
-        Some(suffix) if sandbox.starts_with("workspace") => format!("{sandbox}{suffix}"),
-        _ => sandbox.to_string(),
+        Some(suffix) if sandbox.starts_with("workspace") => format!("{label}{suffix}"),
+        _ => label.to_string(),
     }
 }
 
@@ -697,12 +699,19 @@ fn status_approval_label(
 ) -> String {
     if approval_policy == AskForApproval::OnRequest {
         return match approvals_reviewer {
-            ApprovalsReviewer::AutoReview => "Approve for me".to_string(),
-            ApprovalsReviewer::User => "Ask for approval".to_string(),
+            ApprovalsReviewer::AutoReview => "自动为我审批".to_string(),
+            ApprovalsReviewer::User => "请求审批".to_string(),
         };
     }
 
-    approval.to_string()
+    match approval {
+        "never" => "无需审批",
+        "untrusted" => "不受信任时请求审批",
+        "on-failure" => "失败时请求审批",
+        "on-request" => "按需请求审批",
+        _ => approval,
+    }
+    .to_string()
 }
 
 impl HistoryCell for StatusHistoryCell {
@@ -728,11 +737,11 @@ impl HistoryCell for StatusHistoryCell {
                 (None, None) => "ChatGPT".to_string(),
             },
             StatusAccountDisplay::ApiKey => {
-                "API key configured (run codex login to use ChatGPT)".to_string()
+                "已配置 API 密钥（运行 codex login 可使用 ChatGPT）".to_string()
             }
         });
 
-        let mut labels: Vec<String> = vec!["Model", "Directory", "Permissions", "Agents.md"]
+        let mut labels: Vec<String> = vec!["模型", "目录", "权限", "Agents.md"]
             .into_iter()
             .map(str::to_string)
             .collect();
@@ -750,27 +759,30 @@ impl HistoryCell for StatusHistoryCell {
             .expect("status history agents summary state poisoned")
             .clone();
 
+        if self.remote_connection.is_some() {
+            push_label(&mut labels, &mut seen, "远程连接");
+        }
         if self.model_provider.is_some() {
-            push_label(&mut labels, &mut seen, "Model provider");
+            push_label(&mut labels, &mut seen, "模型提供商");
         }
         if account_value.is_some() {
-            push_label(&mut labels, &mut seen, "Account");
+            push_label(&mut labels, &mut seen, "账户");
         }
         if thread_name.is_some() {
-            push_label(&mut labels, &mut seen, "Thread name");
+            push_label(&mut labels, &mut seen, "线程名称");
         }
         if self.session_id.is_some() {
-            push_label(&mut labels, &mut seen, "Session");
+            push_label(&mut labels, &mut seen, "会话");
         }
         if self.session_id.is_some() && self.forked_from.is_some() {
-            push_label(&mut labels, &mut seen, "Forked from");
+            push_label(&mut labels, &mut seen, "派生自");
         }
         if self.collaboration_mode.is_some() {
-            push_label(&mut labels, &mut seen, "Collaboration mode");
+            push_label(&mut labels, &mut seen, "协作模式");
         }
-        push_label(&mut labels, &mut seen, "Token usage");
+        push_label(&mut labels, &mut seen, "令牌用量");
         if self.token_usage.context_window.is_some() {
-            push_label(&mut labels, &mut seen, "Context window");
+            push_label(&mut labels, &mut seen, "上下文窗口");
         }
 
         self.collect_rate_limit_labels(&rate_limit_state, &mut seen, &mut labels);
@@ -779,13 +791,11 @@ impl HistoryCell for StatusHistoryCell {
         let value_width = formatter.value_width(available_inner_width);
 
         let note_first_line = Line::from(vec![
-            Span::from("Visit ").cyan(),
+            Span::from("访问 ").cyan(),
             CHATGPT_USAGE_URL.cyan().underlined(),
-            Span::from(" for up-to-date").cyan(),
+            Span::from(" 可查看最新的").cyan(),
         ]);
-        let note_second_line = Line::from(vec![
-            Span::from("information on rate limits and credits").cyan(),
-        ]);
+        let note_second_line = Line::from(vec![Span::from("限额和额度信息").cyan()]);
         let note_lines = adaptive_wrap_lines(
             [note_first_line, note_second_line],
             RtOptions::new(available_inner_width),
@@ -809,7 +819,7 @@ impl HistoryCell for StatusHistoryCell {
             );
             let mut wrapped_remote = wrapped_remote.into_iter();
             if let Some(first) = wrapped_remote.next() {
-                lines.push(formatter.line("Remote", first.spans));
+                lines.push(formatter.line("远程连接", first.spans));
                 lines.extend(wrapped_remote.map(|line| formatter.continuation(line.spans)));
             }
             lines.push(Line::from(Vec::<Span<'static>>::new()));
@@ -824,41 +834,41 @@ impl HistoryCell for StatusHistoryCell {
 
         let directory_value = format_directory_display(&self.directory, Some(value_width));
 
-        lines.push(formatter.line("Model", model_spans));
+        lines.push(formatter.line("模型", model_spans));
         if let Some(model_provider) = self.model_provider.as_ref() {
-            lines.push(formatter.line("Model provider", vec![Span::from(model_provider.clone())]));
+            lines.push(formatter.line("模型提供商", vec![Span::from(model_provider.clone())]));
         }
-        lines.push(formatter.line("Directory", vec![Span::from(directory_value)]));
-        lines.push(formatter.line("Permissions", vec![Span::from(self.permissions.clone())]));
+        lines.push(formatter.line("目录", vec![Span::from(directory_value)]));
+        lines.push(formatter.line("权限", vec![Span::from(self.permissions.clone())]));
         lines.push(formatter.line("Agents.md", vec![Span::from(agents_summary)]));
 
         if let Some(account_value) = account_value {
-            lines.push(formatter.line("Account", vec![Span::from(account_value)]));
+            lines.push(formatter.line("账户", vec![Span::from(account_value)]));
         }
 
         if let Some(thread_name) = thread_name {
-            lines.push(formatter.line("Thread name", vec![Span::from(thread_name.to_string())]));
+            lines.push(formatter.line("线程名称", vec![Span::from(thread_name.to_string())]));
         }
         if let Some(collab_mode) = self.collaboration_mode.as_ref() {
-            lines.push(formatter.line("Collaboration mode", vec![Span::from(collab_mode.clone())]));
+            lines.push(formatter.line("协作模式", vec![Span::from(collab_mode.clone())]));
         }
         if let Some(session) = self.session_id.as_ref() {
-            lines.push(formatter.line("Session", vec![Span::from(session.clone())]));
+            lines.push(formatter.line("会话", vec![Span::from(session.clone())]));
         }
         if self.session_id.is_some()
             && let Some(forked_from) = self.forked_from.as_ref()
         {
-            lines.push(formatter.line("Forked from", vec![Span::from(forked_from.clone())]));
+            lines.push(formatter.line("派生自", vec![Span::from(forked_from.clone())]));
         }
 
         lines.push(Line::from(Vec::<Span<'static>>::new()));
         // Hide token usage only for ChatGPT subscribers
         if !matches!(self.account, Some(StatusAccountDisplay::ChatGpt { .. })) {
-            lines.push(formatter.line("Token usage", self.token_usage_spans()));
+            lines.push(formatter.line("令牌用量", self.token_usage_spans()));
         }
 
         if let Some(spans) = self.context_window_spans() {
-            lines.push(formatter.line("Context window", spans));
+            lines.push(formatter.line("上下文窗口", spans));
         }
 
         lines.extend(self.rate_limit_lines(&rate_limit_state, available_inner_width, &formatter));

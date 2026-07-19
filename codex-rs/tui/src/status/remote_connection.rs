@@ -21,7 +21,7 @@ pub(crate) fn remote_connection_status_value(
     let address = match endpoint {
         RemoteAppServerEndpoint::WebSocket { websocket_url, .. } => {
             sanitized_websocket_display_address(websocket_url)
-                .unwrap_or_else(|| "<invalid websocket URL>".to_string())
+                .unwrap_or_else(|| "<无效的 WebSocket URL>".to_string())
         }
         RemoteAppServerEndpoint::UnixSocket { socket_path } => {
             format!("unix://{}", socket_path.display())
@@ -29,7 +29,7 @@ pub(crate) fn remote_connection_status_value(
     };
     let version = server_version
         .map(|version| format!("v{version}"))
-        .unwrap_or_else(|| "unknown".to_string());
+        .unwrap_or_else(|| "未知".to_string());
     Some(RemoteConnectionStatus { address, version })
 }
 

@@ -90,7 +90,7 @@ impl SessionTarget {
         self.path
             .as_ref()
             .map(|path| path.display().to_string())
-            .unwrap_or_else(|| format!("thread {}", self.thread_id))
+            .unwrap_or_else(|| format!("线程 {}", self.thread_id))
     }
 }
 
@@ -117,15 +117,15 @@ pub enum SessionPickerLaunchContext {
 impl SessionPickerAction {
     fn title(self) -> &'static str {
         match self {
-            SessionPickerAction::Resume => "Resume a previous session",
-            SessionPickerAction::Fork => "Fork a previous session",
+            SessionPickerAction::Resume => "恢复之前的会话",
+            SessionPickerAction::Fork => "派生之前的会话",
         }
     }
 
     fn action_label(self) -> &'static str {
         match self {
-            SessionPickerAction::Resume => "resume",
-            SessionPickerAction::Fork => "fork",
+            SessionPickerAction::Resume => "恢复",
+            SessionPickerAction::Fork => "派生",
         }
     }
 
@@ -614,8 +614,8 @@ fn spawn_app_server_page_loader(
 /// Returns the human-readable column header for the given sort key.
 fn sort_key_label(sort_key: ThreadSortKey) -> &'static str {
     match sort_key {
-        ThreadSortKey::CreatedAt => "Created",
-        ThreadSortKey::UpdatedAt | ThreadSortKey::RecencyAt => "Updated",
+        ThreadSortKey::CreatedAt => "创建时间",
+        ThreadSortKey::UpdatedAt | ThreadSortKey::RecencyAt => "更新时间",
     }
 }
 
@@ -1034,7 +1034,7 @@ impl PickerState {
             return;
         };
         let Some(thread_id) = row.thread_id else {
-            self.inline_error = Some("No transcript available for this session".to_string());
+            self.inline_error = Some("此会话没有可用的对话记录".to_string());
             self.request_frame();
             return;
         };
@@ -1152,10 +1152,10 @@ impl PickerState {
                     }
                     self.inline_error = Some(match path {
                         Some(path) => {
-                            format!("Failed to read session metadata from {}", path.display())
+                            format!("无法从 {} 读取会话元数据", path.display())
                         }
                         None => {
-                            String::from("Failed to read session metadata from selected session")
+                            String::from("无法从所选会话读取会话元数据")
                         }
                     });
                     self.request_frame();
@@ -1359,7 +1359,7 @@ impl PickerState {
                     if self.pending_transcript_open == Some(thread_id) {
                         self.pending_transcript_open = None;
                         self.transcript_loading_frame_shown = false;
-                        self.inline_error = Some("Could not load transcript preview".to_string());
+                        self.inline_error = Some("无法加载对话记录预览".to_string());
                     }
                     self.request_frame();
                 }
@@ -1685,7 +1685,7 @@ impl PickerState {
         self.ensure_selected_visible();
         if let Err(err) = self.persist_density().await {
             warn!(error = %err, "failed to persist session picker view mode");
-            self.inline_error = Some(format!("Failed to save view mode: {err}"));
+            self.inline_error = Some(format!("无法保存视图模式：{err}"));
         }
         self.request_frame();
     }
@@ -1818,7 +1818,7 @@ fn row_from_app_server_thread(thread: Thread) -> Option<Row> {
     Some(Row {
         path: thread.path,
         preview: if preview.is_empty() {
-            String::from("(no message yet)")
+            String::from("（暂无消息）")
         } else {
             preview.to_string()
         },
@@ -1931,9 +1931,9 @@ fn search_line(state: &PickerState, width: u16) -> Line<'_> {
         return Line::from(error.red());
     }
     let search = if state.query.is_empty() {
-        "Type to search".dim()
+        "输入内容以搜索".dim()
     } else {
-        format!("Search: {}", state.query).into()
+        format!("搜索：{}", state.query).into()
     };
     let mut toolbar = toolbar_line(state, /*compact*/ false);
     if toolbar.width() as u16 > width.saturating_sub(2) {
@@ -1975,7 +1975,7 @@ fn sort_control_spans(state: &PickerState, compact: bool) -> Vec<Span<'static>> 
     let sort_focused = state.toolbar_focus == ToolbarControl::Sort;
     if compact {
         return vec![
-            "Sort:".dim(),
+            "排序：".dim(),
             toolbar_value(
                 sort_key_label(state.sort_key),
                 /*active*/ true,
@@ -1984,7 +1984,7 @@ fn sort_control_spans(state: &PickerState, compact: bool) -> Vec<Span<'static>> 
         ];
     }
     vec![
-        "Sort: ".dim(),
+        "排序：".dim(),
         toolbar_value(
             sort_key_label(ThreadSortKey::UpdatedAt),
             state.sort_key == ThreadSortKey::UpdatedAt,
@@ -2002,7 +2002,7 @@ fn filter_control_spans(state: &PickerState, compact: bool) -> Vec<Span<'static>
     let filter_focused = state.toolbar_focus == ToolbarControl::Filter;
     if compact || state.filter_cwd.is_none() {
         return vec![
-            "Filter:".dim(),
+            "筛选：".dim(),
             toolbar_value(
                 filter_mode_label(state.filter_mode),
                 /*active*/ true,
@@ -2011,7 +2011,7 @@ fn filter_control_spans(state: &PickerState, compact: bool) -> Vec<Span<'static>
         ];
     }
     vec![
-        "Filter: ".dim(),
+        "筛选：".dim(),
         toolbar_value(
             filter_mode_label(SessionFilterMode::Cwd),
             state.filter_mode == SessionFilterMode::Cwd,
@@ -2040,8 +2040,8 @@ fn toolbar_value(label: &'static str, active: bool, focused: bool) -> Span<'stat
 
 fn filter_mode_label(filter_mode: SessionFilterMode) -> &'static str {
     match filter_mode {
-        SessionFilterMode::Cwd => "Cwd",
-        SessionFilterMode::All => "All",
+        SessionFilterMode::Cwd => "当前目录",
+        SessionFilterMode::All => "全部",
     }
 }
 
@@ -2171,14 +2171,14 @@ fn footer_hint_lines(state: &PickerState, width: u16) -> Vec<Line<'static>> {
         let hints = [
             PickerFooterHint {
                 key: "loading",
-                wide_label: String::from("transcript"),
-                compact_label: String::from("transcript"),
+                wide_label: String::from("正在加载对话记录"),
+                compact_label: String::from("加载中"),
                 priority: 0,
             },
             PickerFooterHint {
                 key: "ctrl+c",
-                wide_label: String::from("quit"),
-                compact_label: String::from("quit"),
+                wide_label: String::from("退出"),
+                compact_label: String::from("退出"),
                 priority: 1,
             },
         ];
@@ -2192,23 +2192,23 @@ fn footer_hint_lines(state: &PickerState, width: u16) -> Vec<Line<'static>> {
     let action_label = state.action.action_label();
     let (esc_label, esc_compact_label) = if state.query.is_empty() {
         match state.launch_context {
-            SessionPickerLaunchContext::Startup => ("start new", "new"),
-            SessionPickerLaunchContext::ExistingSession => ("exit", "exit"),
+            SessionPickerLaunchContext::Startup => ("新建会话", "新建"),
+            SessionPickerLaunchContext::ExistingSession => ("退出", "退出"),
         }
     } else {
-        ("clear search", "clear")
+        ("清除搜索", "清除")
     };
     let ctrl_c_label = match state.launch_context {
-        SessionPickerLaunchContext::Startup => "quit",
-        SessionPickerLaunchContext::ExistingSession => "exit",
+        SessionPickerLaunchContext::Startup => "退出",
+        SessionPickerLaunchContext::ExistingSession => "退出",
     };
     let density_label = match state.density {
-        SessionListDensity::Comfortable => "dense view",
-        SessionListDensity::Dense => "comfortable view",
+        SessionListDensity::Comfortable => "紧凑视图",
+        SessionListDensity::Dense => "舒适视图",
     };
     let density_compact_label = match state.density {
-        SessionListDensity::Comfortable => "dense",
-        SessionListDensity::Dense => "comfy",
+        SessionListDensity::Comfortable => "紧凑",
+        SessionListDensity::Dense => "舒适",
     };
     let first_row_hints = vec![
         PickerFooterHint {
@@ -2231,14 +2231,14 @@ fn footer_hint_lines(state: &PickerState, width: u16) -> Vec<Line<'static>> {
         },
         PickerFooterHint {
             key: "tab",
-            wide_label: String::from("focus sort/filter"),
-            compact_label: String::from("focus"),
+            wide_label: String::from("切换排序/筛选焦点"),
+            compact_label: String::from("切换焦点"),
             priority: 7,
         },
         PickerFooterHint {
             key: "←/→",
-            wide_label: String::from("change option"),
-            compact_label: String::from("option"),
+            wide_label: String::from("更改选项"),
+            compact_label: String::from("选项"),
             priority: 8,
         },
     ];
@@ -2251,20 +2251,20 @@ fn footer_hint_lines(state: &PickerState, width: u16) -> Vec<Line<'static>> {
         },
         PickerFooterHint {
             key: "ctrl+t",
-            wide_label: String::from("transcript"),
-            compact_label: String::from("preview"),
+            wide_label: String::from("对话记录"),
+            compact_label: String::from("预览"),
             priority: 4,
         },
         PickerFooterHint {
             key: "ctrl+e",
-            wide_label: String::from("expand"),
-            compact_label: String::from("exp"),
+            wide_label: String::from("展开"),
+            compact_label: String::from("展开"),
             priority: 6,
         },
         PickerFooterHint {
             key: "↑/↓",
-            wide_label: String::from("browse"),
-            compact_label: String::from("browse"),
+            wide_label: String::from("浏览"),
+            compact_label: String::from("浏览"),
             priority: 5,
         },
     ];
@@ -2309,7 +2309,7 @@ fn render_transcript_loading_overlay(frame: &mut crate::custom_terminal::Frame, 
         return;
     }
 
-    let message = "Loading transcript…";
+    let message = "正在加载对话记录…";
     let message_width = UnicodeWidthStr::width(message) as u16;
     let overlay_width = if area.width >= message_width.saturating_add(10) {
         message_width + 10
@@ -2471,7 +2471,7 @@ fn render_list(frame: &mut crate::custom_terminal::Frame, area: Rect, state: &Pi
     );
     if show_more_above {
         frame.render_widget_ref(
-            more_line("↑ more"),
+            more_line("↑ 更多"),
             Rect::new(area.x, area.y, area.width, 1),
         );
     }
@@ -2506,15 +2506,15 @@ fn render_list(frame: &mut crate::custom_terminal::Frame, area: Rect, state: &Pi
     if state.pagination.loading.is_pending()
         && y < content_area.y.saturating_add(content_area.height)
     {
-        let loading_line: Line = vec!["  ".into(), "Loading older sessions…".italic().dim()].into();
+        let loading_line: Line = vec!["  ".into(), "正在加载更早的会话…".italic().dim()].into();
         let rect = Rect::new(area.x, y, area.width, 1);
         frame.render_widget_ref(loading_line, rect);
     }
     if show_more_below {
         let label = if state.pagination.loading.is_pending() {
-            "↓ loading more"
+            "↓ 正在加载更多"
         } else {
-            "↓ more"
+            "↓ 更多"
         };
         frame.render_widget_ref(
             more_line(label),
@@ -2794,8 +2794,8 @@ impl FooterPart {
         match self {
             FooterPart::Date(text) => text,
             FooterPart::Branch(Some(text)) | FooterPart::Cwd(Some(text)) => text,
-            FooterPart::Branch(None) => "no branch",
-            FooterPart::Cwd(None) => "no cwd",
+            FooterPart::Branch(None) => "无分支",
+            FooterPart::Cwd(None) => "无工作目录",
         }
     }
 
@@ -2951,15 +2951,11 @@ fn render_transcript_preview_lines(
     };
     let preview_lines = match state.transcript_previews.get(&thread_id) {
         Some(TranscriptPreviewState::Loading) => {
-            vec![vec!["  │ ".dim(), "Loading recent transcript...".italic().dim()].into()]
+            vec![vec!["  │ ".dim(), "正在加载最近的对话记录...".italic().dim()].into()]
         }
-        Some(TranscriptPreviewState::Failed) => vec![
-            vec![
-                "  │ ".dim(),
-                "Could not load transcript preview".italic().red(),
-            ]
-            .into(),
-        ],
+        Some(TranscriptPreviewState::Failed) => {
+            vec![vec!["  │ ".dim(), "无法加载对话记录预览".italic().red()].into()]
+        }
         Some(TranscriptPreviewState::Loaded(lines)) => {
             render_conversation_preview_lines(lines, width)
         }
@@ -2990,21 +2986,21 @@ fn render_expanded_session_details(
         .git_branch
         .as_ref()
         .map(|branch| format!("{SESSION_META_BRANCH_ICON} {branch}"))
-        .unwrap_or_else(|| format!("{SESSION_META_BRANCH_ICON} no branch"));
+        .unwrap_or_else(|| format!("{SESSION_META_BRANCH_ICON} 无分支"));
 
     vec![
-        expanded_detail_line("Session:", &session, width),
-        expanded_time_detail_line("Created:", reference, row.created_at, width),
+        expanded_detail_line("会话：", &session, width),
+        expanded_time_detail_line("创建：", reference, row.created_at, width),
         expanded_time_detail_line(
-            "Updated:",
+            "更新：",
             reference,
             row.updated_at.or(row.created_at),
             width,
         ),
-        expanded_detail_line("Directory:", &directory, width),
-        expanded_detail_line("Branch:", &branch, width),
+        expanded_detail_line("目录：", &directory, width),
+        expanded_detail_line("分支：", &branch, width),
         vec!["  │".dim()].into(),
-        vec!["  │ ".dim(), "Conversation:".dim()].into(),
+        vec!["  │ ".dim(), "对话：".dim()].into(),
     ]
 }
 
@@ -3013,13 +3009,7 @@ fn render_conversation_preview_lines(
     width: u16,
 ) -> Vec<Line<'static>> {
     if lines.is_empty() {
-        return vec![
-            vec![
-                "  └ ".dim(),
-                "No transcript preview available".italic().dim(),
-            ]
-            .into(),
-        ];
+        return vec![vec!["  └ ".dim(), "没有可用的对话记录预览".italic().dim()].into()];
     }
 
     let mut rendered = Vec::new();
@@ -3149,48 +3139,40 @@ fn format_relative_time(reference: DateTime<Utc>, ts: Option<DateTime<Utc>>) -> 
     };
     let seconds = (reference - ts).num_seconds().max(0);
     if seconds == 0 {
-        return "now".to_string();
+        return "刚刚".to_string();
     }
     if seconds < 60 {
-        return format!("{seconds}s ago");
+        return format!("{seconds} 秒前");
     }
     let minutes = seconds / 60;
     if minutes < 60 {
-        return format!("{minutes}m ago");
+        return format!("{minutes} 分钟前");
     }
     let hours = minutes / 60;
     if hours < 24 {
-        return format!("{hours}h ago");
+        return format!("{hours} 小时前");
     }
     let days = hours / 24;
-    format!("{days}d ago")
+    format!("{days} 天前")
 }
 
 fn format_relative_time_long(reference: DateTime<Utc>, ts: DateTime<Utc>) -> String {
     let seconds = (reference - ts).num_seconds().max(0);
     if seconds == 0 {
-        return "now".to_string();
+        return "刚刚".to_string();
     }
     if seconds < 60 {
-        return plural_time(seconds, "second");
+        return format!("{seconds} 秒前");
     }
     let minutes = seconds / 60;
     if minutes < 60 {
-        return plural_time(minutes, "minute");
+        return format!("{minutes} 分钟前");
     }
     let hours = minutes / 60;
     if hours < 24 {
-        return plural_time(hours, "hour");
+        return format!("{hours} 小时前");
     }
-    plural_time(hours / 24, "day")
-}
-
-fn plural_time(value: i64, unit: &str) -> String {
-    if value == 1 {
-        format!("1 {unit} ago")
-    } else {
-        format!("{value} {unit}s ago")
-    }
+    format!("{} 天前", hours / 24)
 }
 
 fn format_timestamp(ts: DateTime<Utc>) -> String {
@@ -3202,26 +3184,26 @@ fn render_empty_state_line(state: &PickerState) -> Line<'static> {
         if state.search_state.is_active()
             || (state.pagination.loading.is_pending() && state.pagination.next_cursor.is_some())
         {
-            return vec!["Searching…".italic().dim()].into();
+            return vec!["正在搜索…".italic().dim()].into();
         }
         if state.pagination.reached_scan_cap {
             let msg = format!(
-                "Search scanned first {} sessions; more may exist",
+                "已搜索前 {} 个会话，可能还有更多结果",
                 state.pagination.num_scanned_files
             );
             return vec![Span::from(msg).italic().dim()].into();
         }
-        return vec!["No results for your search".italic().dim()].into();
+        return vec!["没有符合搜索条件的结果".italic().dim()].into();
     }
 
     if state.pagination.loading.is_pending() {
         if state.all_rows.is_empty() && state.pagination.num_scanned_files == 0 {
-            return vec!["Loading sessions…".italic().dim()].into();
+            return vec!["正在加载会话…".italic().dim()].into();
         }
-        return vec!["Loading older sessions…".italic().dim()].into();
+        return vec!["正在加载更早的会话…".italic().dim()].into();
     }
 
-    vec!["No sessions yet".italic().dim()].into()
+    vec!["暂无会话".italic().dim()].into()
 }
 
 #[cfg(test)]

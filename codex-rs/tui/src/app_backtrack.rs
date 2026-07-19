@@ -48,9 +48,8 @@ use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
 
-const NO_PREVIOUS_MESSAGE_TO_EDIT: &str = "No previous message to edit.";
-pub(crate) const SIDE_EDIT_PREVIOUS_UNAVAILABLE_MESSAGE: &str =
-    "Editing previous prompts is unavailable in side conversations.";
+const NO_PREVIOUS_MESSAGE_TO_EDIT: &str = "没有可编辑的上一条消息。";
+pub(crate) const SIDE_EDIT_PREVIOUS_UNAVAILABLE_MESSAGE: &str = "侧边会话中无法编辑之前的提示词。";
 
 /// Aggregates all backtrack-related state used by the App.
 #[derive(Default)]
@@ -186,9 +185,8 @@ impl App {
         err: impl std::fmt::Display,
     ) {
         self.chat_widget.restore_user_message_to_composer(prompt);
-        self.chat_widget.add_error_message(format!(
-            "Failed to branch before the selected prompt: {err}"
-        ));
+        self.chat_widget
+            .add_error_message(format!("在所选提示词之前创建分支失败：{err}"));
     }
 
     /// Open transcript overlay (enters alternate screen and shows full transcript).

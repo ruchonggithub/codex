@@ -31,12 +31,11 @@ struct PreparedSlashCommandArgs {
     source: SlashCommandDispatchSource,
 }
 
-const SIDE_STARTING_CONTEXT_LABEL: &str = "Side starting...";
-const SIDE_SLASH_COMMAND_UNAVAILABLE_HINT: &str =
-    "Press Ctrl+C to return to the main thread first.";
-const GOAL_USAGE_HINT: &str = "Example: /goal improve benchmark coverage";
-const RAW_USAGE: &str = "Usage: /raw [on|off]";
-const USAGE_CHATGPT_LOGIN_REQUIRED: &str = "Sign in with ChatGPT to use /usage.";
+const SIDE_STARTING_CONTEXT_LABEL: &str = "正在启动侧边会话……";
+const SIDE_SLASH_COMMAND_UNAVAILABLE_HINT: &str = "请先按 Ctrl+C 返回主会话。";
+const GOAL_USAGE_HINT: &str = "示例：/goal 提高基准测试覆盖率";
+const RAW_USAGE: &str = "用法：/raw [on|off]";
+const USAGE_CHATGPT_LOGIN_REQUIRED: &str = "请使用 ChatGPT 登录后再使用 /usage。";
 
 impl ChatWidget {
     /// Dispatch a bare slash command and record its staged local-history entry.
@@ -55,7 +54,7 @@ impl ChatWidget {
     pub(super) fn handle_service_tier_command_dispatch(&mut self, command: ServiceTierCommand) {
         if self.active_side_conversation {
             self.add_error_message(format!(
-                "'/{}' is unavailable in side conversations. {SIDE_SLASH_COMMAND_UNAVAILABLE_HINT}",
+                "侧边会话中无法使用 '/{}'。{SIDE_SLASH_COMMAND_UNAVAILABLE_HINT}",
                 command.name
             ));
             self.bottom_pane.drain_pending_submission_state();
@@ -84,8 +83,8 @@ impl ChatWidget {
     fn apply_plan_slash_command(&mut self) -> bool {
         if !self.collaboration_modes_enabled() {
             self.add_info_message(
-                "Collaboration modes are disabled.".to_string(),
-                Some("Enable collaboration modes to use /plan.".to_string()),
+                "协作模式已禁用。".to_string(),
+                Some("启用协作模式后才能使用 /plan。".to_string()),
             );
             return false;
         }
@@ -93,10 +92,7 @@ impl ChatWidget {
             self.set_collaboration_mask_from_user_action(mask);
             true
         } else {
-            self.add_info_message(
-                "Plan mode unavailable right now.".to_string(),
-                /*hint*/ None,
-            );
+            self.add_info_message("规划模式当前不可用。".to_string(), /*hint*/ None);
             false
         }
     }
@@ -117,9 +113,7 @@ impl ChatWidget {
     fn request_empty_side_conversation(&mut self, cmd: SlashCommand) {
         let Some(parent_thread_id) = self.thread_id else {
             let command = cmd.command();
-            self.add_error_message(format!(
-                "'/{command}' is unavailable before the session starts."
-            ));
+            self.add_error_message(format!("会话启动前无法使用 '/{command}'。"));
             return;
         };
 
@@ -146,10 +140,7 @@ impl ChatWidget {
             return;
         }
         if self.slash_command_blocked_by_active_task(cmd) {
-            let message = format!(
-                "'/{}' is disabled while a task is in progress.",
-                cmd.command()
-            );
+            let message = format!("任务进行期间无法使用 '/{}'。", cmd.command());
             self.add_to_history(history_cell::new_error_event(message));
             self.bottom_pane.drain_pending_submission_state();
             self.request_redraw();
@@ -175,22 +166,19 @@ impl ChatWidget {
             }
             SlashCommand::Archive => {
                 self.bottom_pane.show_selection_view(SelectionViewParams {
-                    title: Some("Archive this session?".to_string()),
-                    subtitle: Some(
-                        "Are you sure? This will archive the current session and exit Codex"
-                            .to_string(),
-                    ),
+                    title: Some("归档此会话？".to_string()),
+                    subtitle: Some("确定要继续吗？这将归档当前会话并退出 Codex".to_string()),
                     footer_hint: Some(standard_popup_hint_line()),
                     items: vec![
                         SelectionItem {
-                            name: "No, don't archive".to_string(),
-                            description: Some("Return to the current session".to_string()),
+                            name: "否，不归档".to_string(),
+                            description: Some("返回当前会话".to_string()),
                             dismiss_on_select: true,
                             ..Default::default()
                         },
                         SelectionItem {
-                            name: "Yes, archive and exit".to_string(),
-                            description: Some("Archive this session now".to_string()),
+                            name: "是，归档并退出".to_string(),
+                            description: Some("立即归档此会话".to_string()),
                             actions: vec![Box::new(|tx| {
                                 tx.send(AppEvent::ArchiveCurrentThread);
                             })],
@@ -204,21 +192,19 @@ impl ChatWidget {
             }
             SlashCommand::Delete => {
                 self.bottom_pane.show_selection_view(SelectionViewParams {
-                    title: Some("Delete this session?".to_string()),
-                    subtitle: Some(
-                        "Cannot be undone. Subagent threads will also be deleted.".to_string(),
-                    ),
+                    title: Some("删除此会话？".to_string()),
+                    subtitle: Some("此操作无法撤销，同时也会删除所有子代理线程。".to_string()),
                     footer_hint: Some(standard_popup_hint_line()),
                     items: vec![
                         SelectionItem {
-                            name: "No, keep this session".to_string(),
-                            description: Some("Return to the current session".to_string()),
+                            name: "否，保留此会话".to_string(),
+                            description: Some("返回当前会话".to_string()),
                             dismiss_on_select: true,
                             ..Default::default()
                         },
                         SelectionItem {
-                            name: "Yes, delete and exit".to_string(),
-                            description: Some("Permanently delete this session now".to_string()),
+                            name: "是，删除并退出".to_string(),
+                            description: Some("立即永久删除此会话".to_string()),
                             actions: vec![Box::new(|tx| {
                                 tx.send(AppEvent::DeleteCurrentThread);
                             })],
@@ -241,9 +227,7 @@ impl ChatWidget {
             }
             SlashCommand::App => {
                 let Some(thread_id) = self.thread_id else {
-                    self.add_error_message(
-                        "Session is still starting; try /app again in a moment.".to_string(),
-                    );
+                    self.add_error_message("会话仍在启动，请稍后再试 /app。".to_string());
                     return;
                 };
                 self.app_event_tx
@@ -333,9 +317,7 @@ impl ChatWidget {
                     else {
                         // Avoid panicking in interactive UI; treat this as a recoverable
                         // internal error.
-                        self.add_error_message(
-                            "Internal error: missing the 'auto' approval preset.".to_string(),
-                        );
+                        self.add_error_message("内部错误：缺少 'auto' 审批预设。".to_string());
                         return;
                     };
 
@@ -367,9 +349,7 @@ impl ChatWidget {
                 }
             }
             SlashCommand::SandboxReadRoot => {
-                self.add_error_message(
-                    "Usage: /sandbox-add-read-dir <absolute-directory-path>".to_string(),
-                );
+                self.add_error_message("用法：/sandbox-add-read-dir <绝对目录路径>".to_string());
             }
             SlashCommand::Experimental => {
                 self.open_experimental_popup();
@@ -408,13 +388,12 @@ impl ChatWidget {
                                 if is_git_repo {
                                     diff_text
                                 } else {
-                                    "`/diff` — _not inside a git repository_".to_string()
+                                    "`/diff` — _当前目录不在 Git 仓库中_".to_string()
                                 }
                             }
-                            Err(e) => format!("Failed to compute diff: {e}"),
+                            Err(e) => format!("计算差异失败：{e}"),
                         },
-                        None => "Failed to compute diff: workspace command runner unavailable"
-                            .to_string(),
+                        None => "计算差异失败：工作区命令运行器不可用".to_string(),
                     };
                     tx.send(AppEvent::DiffResult(text));
                 });
@@ -477,10 +456,10 @@ impl ChatWidget {
                 self.clean_background_terminals();
             }
             SlashCommand::MemoryDrop => {
-                self.add_app_server_stub_message("Memory maintenance");
+                self.add_app_server_stub_message("记忆维护");
             }
             SlashCommand::MemoryUpdate => {
-                self.add_app_server_stub_message("Memory maintenance");
+                self.add_app_server_stub_message("记忆维护");
             }
             SlashCommand::Mcp => {
                 self.add_mcp_output(McpServerStatusDetail::ToolsAndAuthOnly);
@@ -494,14 +473,11 @@ impl ChatWidget {
             SlashCommand::Rollout => {
                 if let Some(path) = self.rollout_path() {
                     self.add_info_message(
-                        format!("Current rollout path: {}", path.display()),
+                        format!("当前 rollout 路径：{}", path.display()),
                         /*hint*/ None,
                     );
                 } else {
-                    self.add_info_message(
-                        "Rollout path is not available yet.".to_string(),
-                        /*hint*/ None,
-                    );
+                    self.add_info_message("Rollout 路径暂不可用。".to_string(), /*hint*/ None);
                 }
             }
             SlashCommand::TestApproval => {
@@ -560,10 +536,7 @@ impl ChatWidget {
             return;
         }
         if self.slash_command_blocked_by_active_task(cmd) {
-            let message = format!(
-                "'/{}' is disabled while a task is in progress.",
-                cmd.command()
-            );
+            let message = format!("任务进行期间无法使用 '/{}'。", cmd.command());
             self.add_to_history(history_cell::new_error_event(message));
             self.request_redraw();
             return;
@@ -676,7 +649,7 @@ impl ChatWidget {
                     match tokens::TokenActivityView::parse(trimmed) {
                         Some(view) => self.add_token_activity_output(view),
                         None => self.add_error_message(
-                            "Usage: /usage [daily|weekly|cumulative]".to_string(),
+                            "用法：/usage [daily|weekly|cumulative]".to_string(),
                         ),
                     }
                 }
@@ -686,7 +659,7 @@ impl ChatWidget {
             }
             SlashCommand::Mcp => match trimmed.to_ascii_lowercase().as_str() {
                 "verbose" => self.add_mcp_output(McpServerStatusDetail::Full),
-                _ => self.add_error_message("Usage: /mcp [verbose]".to_string()),
+                _ => self.add_error_message("用法：/mcp [verbose]".to_string()),
             },
             SlashCommand::Keymap => match trimmed.to_ascii_lowercase().as_str() {
                 "" => self.open_keymap_picker(),
@@ -694,13 +667,11 @@ impl ChatWidget {
                     match crate::keymap::RuntimeKeymap::from_config(&self.config.tui_keymap) {
                         Ok(runtime_keymap) => self.open_keymap_debug(&runtime_keymap),
                         Err(err) => {
-                            self.add_error_message(format!(
-                                "Invalid `tui.keymap` configuration: {err}"
-                            ));
+                            self.add_error_message(format!("`tui.keymap` 配置无效：{err}"));
                         }
                     }
                 }
-                _ => self.add_error_message("Usage: /keymap [debug]".to_string()),
+                _ => self.add_error_message("用法：/keymap [debug]".to_string()),
             },
             SlashCommand::Raw => match trimmed.to_ascii_lowercase().as_str() {
                 "on" => {
@@ -720,7 +691,7 @@ impl ChatWidget {
                 self.session_telemetry
                     .counter("codex.thread.rename", /*inc*/ 1, &[]);
                 let Some(name) = normalize_thread_name(&args) else {
-                    self.add_error_message("Thread name cannot be empty.".to_string());
+                    self.add_error_message("会话名称不能为空。".to_string());
                     return;
                 };
                 self.app_event_tx.set_thread_name(name);
@@ -740,7 +711,7 @@ impl ChatWidget {
                 if self.is_session_configured() {
                     self.reasoning_buffer.clear();
                     self.reasoning_summary_parts.clear();
-                    self.set_status_header(String::from("Working"));
+                    self.set_status_header(String::from("工作中"));
                     self.submit_user_message(user_message);
                 } else {
                     self.queue_user_message(user_message);
@@ -776,9 +747,7 @@ impl ChatWidget {
                     let Some(thread_id) = self.thread_id else {
                         self.add_info_message(
                             GOAL_USAGE.to_string(),
-                            Some(
-                                "The session must start before you can change a goal.".to_string(),
-                            ),
+                            Some("必须先启动会话，才能更改目标。".to_string()),
                         );
                         if source == SlashCommandDispatchSource::Live {
                             self.clear_live_goal_submission();
@@ -836,7 +805,7 @@ impl ChatWidget {
                     } else {
                         self.add_info_message(
                             GOAL_USAGE.to_string(),
-                            Some("The session must start before you can set a goal.".to_string()),
+                            Some("必须先启动会话，才能设置目标。".to_string()),
                         );
                     }
                     return;
@@ -855,9 +824,7 @@ impl ChatWidget {
             SlashCommand::Side | SlashCommand::Btw if !trimmed.is_empty() => {
                 let Some(parent_thread_id) = self.thread_id else {
                     let command = cmd.command();
-                    self.add_error_message(format!(
-                        "'/{command}' is unavailable before the session starts."
-                    ));
+                    self.add_error_message(format!("会话启动前无法使用 '/{command}'。"));
                     return;
                 };
                 let user_message = self.prepared_inline_user_message(
@@ -944,9 +911,7 @@ impl ChatWidget {
             find_slash_command(name, self.builtin_command_flags(), &service_tier_commands)
         else {
             self.add_info_message(
-                format!(
-                    r#"Unrecognized command '/{name}'. Type "/" for a list of supported commands."#
-                ),
+                format!("无法识别命令 '/{name}'。输入 \"/\" 可查看支持的命令列表。"),
                 /*hint*/ None,
             );
             return QueueDrain::Continue;
@@ -1132,7 +1097,7 @@ impl ChatWidget {
             return true;
         }
         self.add_error_message(format!(
-            "'/{}' is unavailable in side conversations. {SIDE_SLASH_COMMAND_UNAVAILABLE_HINT}",
+            "侧边会话中无法使用 '/{}'。{SIDE_SLASH_COMMAND_UNAVAILABLE_HINT}",
             cmd.command()
         ));
         self.bottom_pane.drain_pending_submission_state();
@@ -1145,9 +1110,7 @@ impl ChatWidget {
         }
 
         let command = cmd.command();
-        self.add_error_message(format!(
-            "'/{command}' is unavailable while code review is running."
-        ));
+        self.add_error_message(format!("代码审查运行期间无法使用 '/{command}'。"));
         self.bottom_pane.drain_pending_submission_state();
         false
     }

@@ -75,9 +75,8 @@ impl App {
                 {
                     Ok(app_server) => app_server,
                     Err(err) => {
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to start TUI session picker: {err}"
-                        ));
+                        self.chat_widget
+                            .add_error_message(format!("启动 TUI 会话选择器失败：{err}"));
                         return Ok(AppRunControl::Continue);
                     }
                 };
@@ -146,9 +145,8 @@ impl App {
                             .await;
                     }
                     None => {
-                        self.chat_widget.add_error_message(format!(
-                            "No saved chat found matching '{id_or_name}'."
-                        ));
+                        self.chat_widget
+                            .add_error_message(format!("未找到与“{id_or_name}”匹配的已保存聊天。"));
                     }
                 }
             }
@@ -200,7 +198,7 @@ impl App {
                                         }
                                         if let Some(command) = summary.resume_hint {
                                             let spans = vec![
-                                                "To continue this session, run ".into(),
+                                                "要继续此会话，请运行 ".into(),
                                                 command.cyan(),
                                             ];
                                             lines.push(spans.into());
@@ -210,22 +208,20 @@ impl App {
                                 }
                                 Err(err) => {
                                     self.chat_widget.add_error_message(format!(
-                                        "Failed to attach to forked app-server thread: {err}"
+                                        "连接到派生的 app-server 会话失败：{err}"
                                     ));
                                 }
                             }
                         }
                         Err(err) => {
                             self.chat_widget.add_error_message(format!(
-                                "Failed to fork current session through the app server: {err}"
+                                "通过 app-server 派生当前会话失败：{err}"
                             ));
                         }
                     }
                 } else {
-                    self.chat_widget.add_error_message(
-                        "A thread must contain at least one turn before it can be forked."
-                            .to_string(),
-                    );
+                    self.chat_widget
+                        .add_error_message("会话至少包含一轮对话后才能派生。".to_string());
                 }
 
                 tui.frame_requester().schedule_frame();
@@ -406,7 +402,7 @@ impl App {
                 Err(err) => {
                     tracing::error!("failed to logout: {err}");
                     self.chat_widget
-                        .add_error_message(format!("Logout failed: {err}"));
+                        .add_error_message(format!("退出登录失败：{err}"));
                 }
             },
             AppEvent::FatalExitRequest(message) => {
@@ -489,7 +485,7 @@ impl App {
                 // Enter alternate screen using TUI helper and build pager lines
                 let _ = tui.enter_alt_screen();
                 let pager_lines: Vec<ratatui::text::Line<'static>> = if text.trim().is_empty() {
-                    vec!["No changes detected.".italic().into()]
+                    vec!["未检测到更改。".italic().into()]
                 } else {
                     text.lines().map(ansi_escape_line).collect()
                 };
@@ -1124,10 +1120,10 @@ impl App {
                     let error = format_config_error(&err);
                     tracing::error!(error = %error, "failed to persist conversation model");
                     self.chat_widget
-                        .add_error_message(format!("Failed to save default model: {error}"));
+                        .add_error_message(format!("保存默认模型失败：{error}"));
                 } else {
                     self.chat_widget.add_info_message(
-                        format!("Model changed to {model} {effort} for this conversation"),
+                        format!("本次会话的模型已切换为 {model} {effort}"),
                         /*hint*/ None,
                     );
                 }
@@ -1235,7 +1231,7 @@ impl App {
                         "refusing to set up elevated Windows sandbox mode disallowed by requirements"
                     );
                     self.chat_widget.add_info_message(
-                        "That Windows sandbox option is disallowed by requirements.".to_string(),
+                        "约束要求不允许使用该 Windows 沙箱选项。".to_string(),
                         /*hint*/ None,
                     );
                     return Ok(AppRunControl::Continue);
@@ -1253,7 +1249,7 @@ impl App {
                                 "failed to resolve permission profile for elevated Windows sandbox setup"
                             );
                             self.chat_widget.add_error_message(format!(
-                                "Failed to prepare Windows sandbox for the selected permission profile: {err}"
+                                "为所选权限配置准备 Windows 沙箱失败：{err}"
                             ));
                             return Ok(AppRunControl::Continue);
                         }
@@ -1354,7 +1350,7 @@ impl App {
                         "refusing to set up unelevated Windows sandbox mode disallowed by requirements"
                     );
                     self.chat_widget.add_info_message(
-                        "That Windows sandbox option is disallowed by requirements.".to_string(),
+                        "约束要求不允许使用该 Windows 沙箱选项。".to_string(),
                         /*hint*/ None,
                     );
                     return Ok(AppRunControl::Continue);
@@ -1372,7 +1368,7 @@ impl App {
                                 "failed to resolve permission profile for legacy Windows sandbox setup"
                             );
                             self.chat_widget.add_error_message(format!(
-                                "Failed to prepare Windows sandbox for the selected permission profile: {err}"
+                                "为所选权限配置准备 Windows 沙箱失败：{err}"
                             ));
                             return Ok(AppRunControl::Continue);
                         }
@@ -1424,7 +1420,7 @@ impl App {
                 {
                     self.chat_widget
                         .add_to_history(history_cell::new_info_event(
-                            format!("Granting sandbox read access to {path} ..."),
+                            format!("正在授予沙箱对 {path} 的读取权限……"),
                             /*hint*/ None,
                         ));
 
@@ -1466,12 +1462,12 @@ impl App {
             AppEvent::WindowsSandboxGrantReadRootCompleted { path, error } => match error {
                 Some(err) => {
                     self.chat_widget
-                        .add_to_history(history_cell::new_error_event(format!("Error: {err}")));
+                        .add_to_history(history_cell::new_error_event(format!("错误：{err}")));
                 }
                 None => {
                     self.chat_widget
                         .add_to_history(history_cell::new_info_event(
-                            format!("Sandbox read access granted for {}", path.display()),
+                            format!("已授予沙箱对 {} 的读取权限", path.display()),
                             /*hint*/ None,
                         ));
                 }
@@ -1502,8 +1498,7 @@ impl App {
                             "refusing to persist Windows sandbox mode disallowed by requirements"
                         );
                         self.chat_widget.add_info_message(
-                            "That Windows sandbox option is disallowed by requirements."
-                                .to_string(),
+                            "约束要求不允许使用该 Windows 沙箱选项。".to_string(),
                             /*hint*/ None,
                         );
                         return Ok(AppRunControl::Continue);
@@ -1633,9 +1628,8 @@ impl App {
                                 error = %err,
                                 "failed to enable Windows sandbox feature"
                             );
-                            self.chat_widget.add_error_message(format!(
-                                "Failed to enable the Windows sandbox feature: {err}"
-                            ));
+                            self.chat_widget
+                                .add_error_message(format!("启用 Windows 沙箱功能失败：{err}"));
                         }
                     }
                 }
@@ -1660,7 +1654,7 @@ impl App {
                             .map(std::string::ToString::to_string)
                             .unwrap_or_else(|| "default".to_string());
                         tracing::info!("Selected model: {model}, Selected effort: {effort_label}");
-                        let mut message = format!("Model changed to {model}");
+                        let mut message = format!("模型已切换为 {model}");
                         if let Some(label) = Self::reasoning_label_for(&model, effort.as_ref()) {
                             message.push(' ');
                             message.push_str(&label);
@@ -1674,7 +1668,7 @@ impl App {
                             "failed to persist model selection"
                         );
                         self.chat_widget
-                            .add_error_message(format!("Failed to save default model: {error}"));
+                            .add_error_message(format!("保存默认模型失败：{error}"));
                     }
                 }
             }
@@ -1720,7 +1714,7 @@ impl App {
                 {
                     Ok(_) => {
                         let label = Self::personality_label(personality);
-                        let message = format!("Personality set to {label}");
+                        let message = format!("沟通风格已设置为{label}");
                         self.chat_widget.add_info_message(message, /*hint*/ None);
                     }
                     Err(err) => {
@@ -1728,9 +1722,8 @@ impl App {
                             error = %err,
                             "failed to persist personality selection"
                         );
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save default personality: {err}"
-                        ));
+                        self.chat_widget
+                            .add_error_message(format!("保存默认沟通风格失败：{err}"));
                     }
                 }
             }
@@ -1747,7 +1740,7 @@ impl App {
                 {
                     Ok(_) => {
                         let message = if let Some(service_tier) = service_tier {
-                            format!("Service tier set to {service_tier}")
+                            format!("服务等级已设置为 {service_tier}")
                         } else {
                             "Service tier cleared".to_string()
                         };
@@ -1755,9 +1748,8 @@ impl App {
                     }
                     Err(err) => {
                         tracing::error!(error = %err, "failed to persist service tier selection");
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save default service tier: {err}"
-                        ));
+                        self.chat_widget
+                            .add_error_message(format!("保存默认服务等级失败：{err}"));
                     }
                 }
             }
@@ -1766,7 +1758,7 @@ impl App {
                 if !self.try_set_approval_policy_on_config(
                     &mut config,
                     policy,
-                    "Failed to set approval policy",
+                    "设置审批策略失败",
                     "failed to set approval policy on app config",
                 ) {
                     return Ok(AppRunControl::Continue);
@@ -1785,7 +1777,7 @@ impl App {
                     .try_set_builtin_active_permission_profile_on_config(
                         &mut config,
                         active_permission_profile.clone(),
-                        "Failed to set permission profile",
+                        "设置权限配置失败",
                         "failed to set active permission profile on app config",
                     )
                 else {
@@ -1808,7 +1800,7 @@ impl App {
                 {
                     tracing::warn!(%err, "failed to set permission profile on chat config");
                     self.chat_widget
-                        .add_error_message(format!("Failed to set permission profile: {err}"));
+                        .add_error_message(format!("设置权限配置失败：{err}"));
                     return Ok(AppRunControl::Continue);
                 }
                 self.runtime_permission_profile_override =
@@ -1875,7 +1867,7 @@ impl App {
                         "failed to persist approvals reviewer update"
                     );
                     self.chat_widget
-                        .add_error_message(format!("Failed to save approvals reviewer: {err}"));
+                        .add_error_message(format!("保存审批审查方式失败：{err}"));
                 }
             }
             AppEvent::UpdateFeatureFlags { updates } => {
@@ -1920,9 +1912,8 @@ impl App {
                         error = %err,
                         "failed to persist world-writable warning acknowledgement"
                     );
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to save Agent mode warning preference: {err}"
-                    ));
+                    self.chat_widget
+                        .add_error_message(format!("保存智能体模式警告偏好失败：{err}"));
                 }
             }
             AppEvent::PersistRateLimitSwitchPromptHidden => {
@@ -1935,9 +1926,8 @@ impl App {
                         error = %err,
                         "failed to persist rate limit switch prompt preference"
                     );
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to save rate limit reminder preference: {err}"
-                    ));
+                    self.chat_widget
+                        .add_error_message(format!("保存用量限制提醒偏好失败：{err}"));
                 }
             }
             AppEvent::PersistPlanModeReasoningEffort(effort) => {
@@ -1960,9 +1950,8 @@ impl App {
                         error = %err,
                         "failed to persist plan mode reasoning effort"
                     );
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to save Plan mode reasoning effort: {err}"
-                    ));
+                    self.chat_widget
+                        .add_error_message(format!("保存规划模式推理强度失败：{err}"));
                 }
             }
             AppEvent::PersistModelMigrationPromptAcknowledged {
@@ -1978,9 +1967,8 @@ impl App {
                         error = %err,
                         "failed to persist model migration prompt acknowledgement"
                     );
-                    self.chat_widget.add_error_message(format!(
-                        "Failed to save model migration prompt preference: {err}"
-                    ));
+                    self.chat_widget
+                        .add_error_message(format!("保存模型迁移提示偏好失败：{err}"));
                 }
             }
             AppEvent::OpenApprovalsPopup => {
@@ -2021,7 +2009,7 @@ impl App {
                     Err(err) => {
                         let path_display = path.display();
                         self.chat_widget.add_error_message(format!(
-                            "Failed to update skill config for {path_display}: {err}"
+                            "更新 {path_display} 的技能配置失败：{err}"
                         ));
                     }
                 }
@@ -2055,9 +2043,8 @@ impl App {
                         self.chat_widget.update_connector_enabled(&id, enabled);
                     }
                     Err(err) => {
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to update app config for {id}: {err}"
-                        ));
+                        self.chat_widget
+                            .add_error_message(format!("更新应用 {id} 的配置失败：{err}"));
                     }
                 }
             }
@@ -2152,7 +2139,7 @@ impl App {
                         lines.push(Line::from(""));
                     }
                     if let Some(reason) = request.reason {
-                        lines.push(Line::from(vec!["Reason: ".into(), reason.italic()]));
+                        lines.push(Line::from(vec!["原因：".into(), reason.italic()]));
                         lines.push(Line::from(""));
                     }
                     if let Some(rule_line) =
@@ -2205,9 +2192,8 @@ impl App {
                     Err(err) => {
                         let error = format_config_error(&err);
                         tracing::error!(error = %error, "failed to persist status line settings; keeping previous selection");
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save status line settings: {error}"
-                        ));
+                        self.chat_widget
+                            .add_error_message(format!("保存状态栏设置失败：{error}"));
                     }
                 }
             }
@@ -2245,9 +2231,8 @@ impl App {
                     Err(err) => {
                         tracing::error!(error = %err, "failed to persist terminal title items; keeping previous selection");
                         self.chat_widget.revert_terminal_title_setup_preview();
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save terminal title items: {err}"
-                        ));
+                        self.chat_widget
+                            .add_error_message(format!("保存终端标题项目失败：{err}"));
                     }
                 }
             }
@@ -2284,7 +2269,7 @@ impl App {
                         self.refresh_status_line();
                         tracing::error!(error = %err, "failed to persist theme selection");
                         self.chat_widget
-                            .add_error_message(format!("Failed to save theme: {err}"));
+                            .add_error_message(format!("保存主题失败：{err}"));
                     }
                 }
             }
@@ -2390,7 +2375,7 @@ impl App {
             Err(err) => {
                 tracing::error!(error = %err, "failed to persist keymap binding");
                 self.chat_widget
-                    .add_error_message(format!("Failed to save shortcut: {err}"));
+                    .add_error_message(format!("保存快捷键失败：{err}"));
             }
         }
     }
@@ -2417,7 +2402,7 @@ impl App {
             Ok(runtime_keymap) => runtime_keymap,
             Err(err) => {
                 self.chat_widget
-                    .add_error_message(format!("Failed to refresh shortcuts: {err}"));
+                    .add_error_message(format!("刷新快捷键失败：{err}"));
                 return;
             }
         };
@@ -2436,14 +2421,14 @@ impl App {
                 self.chat_widget
                     .return_to_keymap_picker(&context, &action, &runtime_keymap);
                 self.chat_widget.add_info_message(
-                    format!("Removed custom shortcut for `{context}.{action}`."),
+                    format!("已移除 `{context}.{action}` 的自定义快捷键。"),
                     /*hint*/ None,
                 );
             }
             Err(err) => {
                 tracing::error!(error = %err, "failed to clear keymap binding");
                 self.chat_widget
-                    .add_error_message(format!("Failed to remove shortcut: {err}"));
+                    .add_error_message(format!("移除快捷键失败：{err}"));
             }
         }
     }
@@ -2491,13 +2476,12 @@ impl App {
     ) -> AppRunControl {
         let Some(thread_id) = self.active_thread_id.or(self.chat_widget.thread_id()) else {
             self.chat_widget
-                .add_error_message("A thread must start before it can be archived.".to_string());
+                .add_error_message("会话开始后才能归档。".to_string());
             return AppRunControl::Continue;
         };
         if self.side_threads.contains_key(&thread_id) {
             self.chat_widget.add_error_message(
-                "'/archive' is unavailable in side conversations. Press Ctrl+C to return to the main thread first."
-                    .to_string(),
+                "侧边会话中无法使用 '/archive'。请先按 Ctrl+C 返回主会话。".to_string(),
             );
             return AppRunControl::Continue;
         }
@@ -2506,7 +2490,7 @@ impl App {
             Ok(()) => AppRunControl::Exit(ExitReason::UserRequested),
             Err(err) => {
                 self.chat_widget
-                    .add_error_message(format!("Failed to archive current thread: {err}"));
+                    .add_error_message(format!("归档当前会话失败：{err}"));
                 AppRunControl::Continue
             }
         }
@@ -2518,13 +2502,12 @@ impl App {
     ) -> AppRunControl {
         let Some(thread_id) = self.active_thread_id.or(self.chat_widget.thread_id()) else {
             self.chat_widget
-                .add_error_message("A thread must start before it can be deleted.".to_string());
+                .add_error_message("会话开始后才能删除。".to_string());
             return AppRunControl::Continue;
         };
         if self.side_threads.contains_key(&thread_id) {
             self.chat_widget.add_error_message(
-                "'/delete' is unavailable in side conversations. Press Ctrl+C to return to the main thread first."
-                    .to_string(),
+                "侧边会话中无法使用 '/delete'。请先按 Ctrl+C 返回主会话。".to_string(),
             );
             return AppRunControl::Continue;
         }
@@ -2533,7 +2516,7 @@ impl App {
             Ok(()) => AppRunControl::Exit(ExitReason::UserRequested),
             Err(err) => {
                 self.chat_widget
-                    .add_error_message(format!("Failed to delete current thread: {err}"));
+                    .add_error_message(format!("删除当前会话失败：{err}"));
                 AppRunControl::Continue
             }
         }

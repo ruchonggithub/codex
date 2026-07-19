@@ -568,9 +568,9 @@ impl ListSelectionView {
                     let prefix = if is_selected { '›' } else { ' ' };
                     let name = item.name.as_str();
                     let marker = if item.is_current {
-                        " (current)"
+                        "（当前）"
                     } else if item.is_default {
-                        " (default)"
+                        "（默认）"
                     } else {
                         ""
                     };
@@ -1240,7 +1240,7 @@ impl Renderable for ListSelectionView {
                 Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(header_area);
             header.render(header_area, buf);
             Paragraph::new(vec![
-                Line::from(format!("[… {header_height} lines] ctrl + a view all")).dim(),
+                Line::from(format!("[… 共 {header_height} 行] 按 Ctrl+A 查看全部")).dim(),
             ])
             .render(elision_area, buf);
         } else {
@@ -1285,7 +1285,7 @@ impl Renderable for ListSelectionView {
                     &rows,
                     &self.state,
                     render_area.height as usize,
-                    "no matches",
+                    "没有匹配项",
                     column_width,
                 ),
                 SelectionRowDisplay::SingleLine => render_rows_single_line_with_col_width_mode(
@@ -1294,7 +1294,7 @@ impl Renderable for ListSelectionView {
                     &rows,
                     &self.state,
                     render_area.height as usize,
-                    "no matches",
+                    "没有匹配项",
                     column_width,
                 ),
             };

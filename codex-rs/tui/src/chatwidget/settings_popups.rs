@@ -23,7 +23,7 @@ impl ChatWidget {
     pub(crate) fn open_personality_popup(&mut self) {
         if !self.is_session_configured() {
             self.add_info_message(
-                "Personality selection is disabled until startup completes.".to_string(),
+                "启动完成前无法选择沟通风格。".to_string(),
                 /*hint*/ None,
             );
             return;
@@ -31,7 +31,7 @@ impl ChatWidget {
         if !self.current_model_supports_personality() {
             let current_model = self.current_model();
             self.add_error_message(format!(
-                "Current model ({current_model}) doesn't support personalities. Try /model to pick a different model."
+                "当前模型（{current_model}）不支持沟通风格，请使用 /model 选择其他模型。"
             ));
             return;
         }
@@ -79,8 +79,8 @@ impl ChatWidget {
             .collect();
 
         let mut header = ColumnRenderable::new();
-        header.push(Line::from("Select Personality".bold()));
-        header.push(Line::from("Choose a communication style for Codex.".dim()));
+        header.push(Line::from("选择沟通风格".bold()));
+        header.push(Line::from("选择 Codex 的沟通方式。".dim()));
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             header: Box::new(header),
@@ -96,6 +96,16 @@ impl ChatWidget {
             .filter_map(|spec| {
                 let name = spec.stage.experimental_menu_name()?;
                 let description = spec.stage.experimental_menu_description()?;
+                let (name, description) = match spec.id {
+                    Feature::NetworkProxy => (
+                        "网络代理",
+                        "对已具备网络访问权限的沙箱会话应用网络代理限制。",
+                    ),
+                    Feature::PreventIdleSleep => {
+                        ("运行时阻止系统休眠", "Codex 运行线程时保持计算机唤醒。")
+                    }
+                    _ => (name, description),
+                };
                 Some(ExperimentalFeatureItem {
                     feature: spec.id,
                     name: name.to_string(),
@@ -115,17 +125,17 @@ impl ChatWidget {
 
     fn personality_label(personality: Personality) -> &'static str {
         match personality {
-            Personality::None => "None",
-            Personality::Friendly => "Friendly",
-            Personality::Pragmatic => "Pragmatic",
+            Personality::None => "无",
+            Personality::Friendly => "友好",
+            Personality::Pragmatic => "务实",
         }
     }
 
     fn personality_description(personality: Personality) -> &'static str {
         match personality {
-            Personality::None => "No personality instructions.",
-            Personality::Friendly => "Warm, collaborative, and helpful.",
-            Personality::Pragmatic => "Concise, task-focused, and direct.",
+            Personality::None => "不添加沟通风格指令。",
+            Personality::Friendly => "温和、协作且乐于帮助。",
+            Personality::Pragmatic => "简洁、专注任务且直接。",
         }
     }
 }

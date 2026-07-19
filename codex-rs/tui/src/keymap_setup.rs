@@ -60,9 +60,11 @@ use crate::keymap::RuntimeKeymap;
 use crate::render::renderable::ColumnRenderable;
 use crate::render::renderable::Renderable;
 use actions::KEYMAP_ACTIONS;
+use actions::action_description;
 use actions::action_label;
 use actions::binding_slot;
 use actions::bindings_for_action;
+use actions::context_label;
 use actions::format_binding_summary;
 #[cfg(test)]
 use debug::KeymapDebugView;
@@ -84,7 +86,7 @@ pub(crate) enum KeymapEditOutcome {
 
 fn key_binding_span(binding: &str) -> ratatui::text::Span<'static> {
     if binding == "unbound" {
-        binding.to_string().dim()
+        "未绑定".dim()
     } else {
         binding.to_string().cyan()
     }
@@ -93,9 +95,9 @@ fn key_binding_span(binding: &str) -> ratatui::text::Span<'static> {
 fn keymap_action_menu_hint_line() -> Line<'static> {
     Line::from(vec![
         "enter".cyan(),
-        " select · ".dim(),
+        " 选择 · ".dim(),
         "esc".cyan(),
-        " back".dim(),
+        " 返回".dim(),
     ])
 }
 
@@ -150,7 +152,7 @@ pub(crate) fn build_keymap_action_menu_params(
     let current_bindings =
         active_binding_specs(runtime_keymap, &context, &action).unwrap_or_else(|_| Vec::new());
     let current_binding = if current_bindings.is_empty() {
-        "unbound".to_string()
+        "未绑定".to_string()
     } else {
         current_bindings.join(", ")
     };
@@ -160,49 +162,49 @@ pub(crate) fn build_keymap_action_menu_params(
         .iter()
         .find(|descriptor| descriptor.context == context && descriptor.action == action);
     let context_label = descriptor
-        .map(|descriptor| descriptor.context_label)
+        .map(|descriptor| context_label(descriptor.context))
         .unwrap_or(context.as_str())
         .to_string();
     let description = descriptor
-        .map(|descriptor| descriptor.description)
-        .unwrap_or("Configure this shortcut.");
-    let remove_disabled_reason = (!custom_binding)
-        .then(|| "There is no custom root binding for this action to remove.".to_string());
+        .map(|descriptor| action_description(descriptor.action, descriptor.description))
+        .unwrap_or_else(|| "配置此快捷键。".to_string());
+    let remove_disabled_reason =
+        (!custom_binding).then(|| "此操作没有可移除的根级自定义绑定。".to_string());
     let label = action_label(&action);
     let remove_context = context.clone();
     let remove_action = action.clone();
     let config_path = format!("tui.keymap.{context}.{action}");
     let source = if custom_binding {
-        "Custom root override".cyan()
+        "根级自定义覆盖".cyan()
     } else {
-        "Default keymap".dim()
+        "默认快捷键".dim()
     };
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Edit Shortcut".bold()));
+    header.push(Line::from("编辑快捷键".bold()));
     header.push(Line::from(vec![
         label.bold(),
         " · ".dim(),
         context_label.dim(),
     ]));
     header.push(Line::from(vec![
-        "Current ".dim(),
+        "当前：".dim(),
         key_binding_span(&current_binding),
         " · ".dim(),
         source,
     ]));
     header.push(Line::from(vec![
-        "Config ".dim(),
+        "配置：".dim(),
         format!("`{config_path}`").cyan(),
     ]));
-    header.push(Line::from(description.to_string().dim()));
+    header.push(Line::from(description.dim()));
 
     let mut items = Vec::new();
     match active_binding_count {
         0 => {
             items.push(action_menu_item(
-                "Set key",
-                "Capture a key for this unbound action.",
-                "Capture one key and bind this action.".to_string(),
+                "设置按键",
+                "为此未绑定操作捕获一个按键。",
+                "捕获一个按键并绑定此操作。".to_string(),
                 &context,
                 &action,
                 KeymapEditIntent::ReplaceAll,
@@ -210,17 +212,17 @@ pub(crate) fn build_keymap_action_menu_params(
         }
         1 => {
             items.push(action_menu_item(
-                "Replace binding",
-                "Capture a replacement key.",
-                format!("Capture one key and replace `{current_binding}`."),
+                "替换绑定",
+                "捕获一个替代按键。",
+                format!("捕获一个按键并替换 `{current_binding}`。"),
                 &context,
                 &action,
                 KeymapEditIntent::ReplaceAll,
             ));
             items.push(action_menu_item(
-                "Add alternate binding",
-                "Keep the current binding and add another key.",
-                format!("Capture one key and keep `{current_binding}` as an alternate."),
+                "添加备用绑定",
+                "保留当前绑定并添加另一个按键。",
+                format!("捕获一个按键，并保留 `{current_binding}` 作为备用绑定。"),
                 &context,
                 &action,
                 KeymapEditIntent::AddAlternate,
@@ -230,11 +232,9 @@ pub(crate) fn build_keymap_action_menu_params(
             let replace_one_context = context.clone();
             let replace_one_action = action.clone();
             items.push(SelectionItem {
-                name: "Replace one binding...".to_string(),
-                description: Some("Choose which existing binding to replace.".to_string()),
-                selected_description: Some(
-                    "Pick one current binding, then capture its replacement.".to_string(),
-                ),
+                name: "替换一个绑定...".to_string(),
+                description: Some("选择要替换的现有绑定。".to_string()),
+                selected_description: Some("选择一个当前绑定，然后捕获替代按键。".to_string()),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenKeymapReplaceBindingMenu {
                         context: replace_one_context.clone(),
@@ -244,17 +244,17 @@ pub(crate) fn build_keymap_action_menu_params(
                 ..Default::default()
             });
             items.push(action_menu_item(
-                "Replace all bindings",
-                "Replace every current binding with one key.",
-                format!("Capture one key and replace `{current_binding}`."),
+                "替换所有绑定",
+                "用一个按键替换全部当前绑定。",
+                format!("捕获一个按键并替换 `{current_binding}`。"),
                 &context,
                 &action,
                 KeymapEditIntent::ReplaceAll,
             ));
             items.push(action_menu_item(
-                "Add alternate binding",
-                "Keep current bindings and add another key.",
-                format!("Capture one key and keep `{current_binding}`."),
+                "添加备用绑定",
+                "保留当前绑定并添加另一个按键。",
+                format!("捕获一个按键并保留 `{current_binding}`。"),
                 &context,
                 &action,
                 KeymapEditIntent::AddAlternate,
@@ -262,15 +262,13 @@ pub(crate) fn build_keymap_action_menu_params(
         }
     }
     items.push(SelectionItem {
-        name: "Remove custom binding".to_string(),
+        name: "移除自定义绑定".to_string(),
         description: Some(if custom_binding {
-            "Restore the default keymap binding.".to_string()
+            "恢复默认快捷键绑定。".to_string()
         } else {
-            "No root override to remove.".to_string()
+            "没有可移除的根级覆盖。".to_string()
         }),
-        selected_description: Some(
-            "Delete the root override and use the default keymap again.".to_string(),
-        ),
+        selected_description: Some("删除根级覆盖并重新使用默认快捷键。".to_string()),
         disabled_reason: remove_disabled_reason,
         actions: vec![Box::new(move |tx| {
             tx.send(AppEvent::KeymapCleared {
@@ -281,8 +279,8 @@ pub(crate) fn build_keymap_action_menu_params(
         ..Default::default()
     });
     items.push(SelectionItem {
-        name: "Back to shortcuts".to_string(),
-        description: Some("Return to the shortcut list.".to_string()),
+        name: "返回快捷键列表".to_string(),
+        description: Some("返回快捷键列表。".to_string()),
         dismiss_on_select: true,
         ..Default::default()
     });
@@ -291,9 +289,9 @@ pub(crate) fn build_keymap_action_menu_params(
         view_id: Some(KEYMAP_ACTION_MENU_VIEW_ID),
         header: Box::new(header),
         footer_note: Some(Line::from(vec![
-            "Changes write the root ".dim(),
+            "更改将写入根级 ".dim(),
             "`tui.keymap.*`".cyan(),
-            " override.".dim(),
+            " 覆盖设置。".dim(),
         ])),
         footer_hint: Some(keymap_action_menu_hint_line()),
         items,
@@ -310,13 +308,13 @@ pub(crate) fn build_keymap_replace_binding_menu_params(
     let bindings = active_binding_specs(runtime_keymap, &context, &action).unwrap_or_default();
     let label = action_label(&action);
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Replace Binding".bold()));
+    header.push(Line::from("替换绑定".bold()));
     header.push(Line::from(vec![
         label.bold(),
         " · ".dim(),
         format!("{context}.{action}").dim(),
     ]));
-    header.push(Line::from("Choose the binding to replace.".dim()));
+    header.push(Line::from("选择要替换的绑定。".dim()));
 
     let items = bindings
         .into_iter()
@@ -326,8 +324,8 @@ pub(crate) fn build_keymap_replace_binding_menu_params(
             let old_key = binding.clone();
             SelectionItem {
                 name: binding.clone(),
-                description: Some("Replace this binding.".to_string()),
-                selected_description: Some(format!("Capture a new key to replace `{binding}`.")),
+                description: Some("替换此绑定。".to_string()),
+                selected_description: Some(format!("捕获一个新按键以替换 `{binding}`。")),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenKeymapCapture {
                         context: capture_context.clone(),
@@ -364,14 +362,14 @@ pub(crate) fn build_keymap_conflict_params(
     let retry_action = action.clone();
     let retry_intent = intent;
     SelectionViewParams {
-        title: Some("Shortcut Conflict".to_string()),
-        subtitle: Some(format!("{context}.{action} cannot use `{key}`.")),
+        title: Some("快捷键冲突".to_string()),
+        subtitle: Some(format!("{context}.{action} 无法使用 `{key}`。")),
         footer_note: Some(Line::from(error)),
         footer_hint: Some(standard_popup_hint_line()),
         items: vec![
             SelectionItem {
-                name: "Pick another key".to_string(),
-                description: Some("Return to key capture for this action.".to_string()),
+                name: "选择其他按键".to_string(),
+                description: Some("返回此操作的按键捕获界面。".to_string()),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::OpenKeymapCapture {
                         context: retry_context.clone(),
@@ -383,8 +381,8 @@ pub(crate) fn build_keymap_conflict_params(
                 ..Default::default()
             },
             SelectionItem {
-                name: "Cancel".to_string(),
-                description: Some("Leave keymap unchanged.".to_string()),
+                name: "取消".to_string(),
+                description: Some("不更改快捷键。".to_string()),
                 dismiss_on_select: true,
                 ..Default::default()
             },
@@ -453,7 +451,7 @@ pub(crate) fn keymap_with_edit(
         KeymapEditIntent::AddAlternate => {
             if current_bindings.iter().any(|binding| binding == key) {
                 return Ok(KeymapEditOutcome::Unchanged {
-                    message: format!("No change: `{context}.{action}` already uses `{key}`."),
+                    message: format!("未更改：`{context}.{action}` 已使用 `{key}`。"),
                 });
             }
             let mut bindings = current_bindings.clone();
@@ -463,7 +461,7 @@ pub(crate) fn keymap_with_edit(
         KeymapEditIntent::ReplaceOne { old_key } => {
             if !current_bindings.iter().any(|binding| binding == old_key) {
                 return Err(format!(
-                    "`{context}.{action}` no longer uses `{old_key}`. Reopen /keymap and choose a binding again."
+                    "`{context}.{action}` 已不再使用 `{old_key}`。请重新打开 /keymap 并选择绑定。"
                 ));
             }
             let bindings = current_bindings
@@ -482,15 +480,15 @@ pub(crate) fn keymap_with_edit(
 
     if next_bindings == current_bindings {
         return Ok(KeymapEditOutcome::Unchanged {
-            message: format!("No change: `{context}.{action}` already uses `{key}`."),
+            message: format!("未更改：`{context}.{action}` 已使用 `{key}`。"),
         });
     }
 
     let message = match intent {
-        KeymapEditIntent::ReplaceAll => format!("Remapped `{context}.{action}` to `{key}`."),
-        KeymapEditIntent::AddAlternate => format!("Added `{key}` to `{context}.{action}`."),
+        KeymapEditIntent::ReplaceAll => format!("已将 `{context}.{action}` 重新映射为 `{key}`。"),
+        KeymapEditIntent::AddAlternate => format!("已为 `{context}.{action}` 添加 `{key}`。"),
         KeymapEditIntent::ReplaceOne { old_key } => {
-            format!("Replaced `{old_key}` with `{key}` for `{context}.{action}`.")
+            format!("已将 `{context}.{action}` 的 `{old_key}` 替换为 `{key}`。")
         }
     };
 
@@ -514,7 +512,7 @@ fn keymap_with_bindings(
 ) -> Result<TuiKeymap, String> {
     let mut keymap = keymap.clone();
     let slot = binding_slot(&mut keymap, context, action).ok_or_else(|| {
-        format!("Unknown keymap action `{context}.{action}`. Reopen /keymap and choose an action.")
+        format!("未知快捷键操作 `{context}.{action}`。请重新打开 /keymap 并选择操作。")
     })?;
     *slot = Some(match keys {
         [key] => KeybindingsSpec::One(KeybindingSpec(key.clone())),
@@ -539,7 +537,7 @@ pub(crate) fn active_binding_specs(
     action: &str,
 ) -> Result<Vec<String>, String> {
     let bindings = bindings_for_action(runtime_keymap, context, action).ok_or_else(|| {
-        format!("Unknown keymap action `{context}.{action}`. Reopen /keymap and choose an action.")
+        format!("未知快捷键操作 `{context}.{action}`。请重新打开 /keymap 并选择操作。")
     })?;
     bindings
         .iter()
@@ -568,7 +566,7 @@ pub(crate) fn keymap_without_custom_binding(
 ) -> Result<TuiKeymap, String> {
     let mut keymap = keymap.clone();
     let slot = binding_slot(&mut keymap, context, action).ok_or_else(|| {
-        format!("Unknown keymap action `{context}.{action}`. Reopen /keymap and choose an action.")
+        format!("未知快捷键操作 `{context}.{action}`。请重新打开 /keymap 并选择操作。")
     })?;
     *slot = None;
     Ok(keymap)
@@ -577,7 +575,7 @@ pub(crate) fn keymap_without_custom_binding(
 fn has_custom_binding(keymap: &TuiKeymap, context: &str, action: &str) -> Result<bool, String> {
     let mut keymap = keymap.clone();
     let slot = binding_slot(&mut keymap, context, action).ok_or_else(|| {
-        format!("Unknown keymap action `{context}.{action}`. Reopen /keymap and choose an action.")
+        format!("未知快捷键操作 `{context}.{action}`。请重新打开 /keymap 并选择操作。")
     })?;
     Ok(slot.is_some())
 }
@@ -623,22 +621,22 @@ impl KeymapCaptureView {
     fn lines(&self, width: u16) -> Vec<Line<'static>> {
         let wrap_width = usize::from(width.max(1));
         let mut lines = vec![
-            Line::from("Remap Shortcut".bold()),
+            Line::from("重新映射快捷键".bold()),
             Line::from(vec![
-                "Action: ".dim(),
+                "操作：".dim(),
                 self.label.clone().into(),
                 "  ".into(),
                 format!("{}.{}", self.context, self.action).dim(),
             ]),
-            Line::from(vec!["Current: ".dim(), self.current_binding.clone().cyan()]),
-            Line::from("Press the new key now. Esc cancels.".dim()),
+            Line::from(vec!["当前：".dim(), self.current_binding.clone().cyan()]),
+            Line::from("现在按下新按键；按 Esc 取消。".dim()),
         ];
 
         if let Some(error) = &self.error_message {
             lines.push(Line::from(""));
             let options = textwrap::Options::new(wrap_width)
-                .initial_indent("Error: ")
-                .subsequent_indent("       ");
+                .initial_indent("错误：")
+                .subsequent_indent("      ");
             lines.extend(
                 textwrap::wrap(error, options)
                     .into_iter()
@@ -719,9 +717,7 @@ fn key_parts_to_config_key_spec(
 
     let supported_modifiers = KeyModifiers::CONTROL | KeyModifiers::ALT | KeyModifiers::SHIFT;
     if !modifiers.difference(supported_modifiers).is_empty() {
-        return Err(
-            "Only ctrl, alt, and shift modifiers can be stored in `tui.keymap`.".to_string(),
-        );
+        return Err("`tui.keymap` 只能保存 ctrl、alt 和 shift 修饰键。".to_string());
     }
 
     let key = match code {
@@ -741,7 +737,7 @@ fn key_parts_to_config_key_spec(
         KeyCode::F(number) if (1..=MAX_FUNCTION_KEY).contains(&number) => format!("f{number}"),
         KeyCode::F(_) => {
             return Err(format!(
-                "Only function keys F1 through F{MAX_FUNCTION_KEY} can be stored in `tui.keymap`."
+                "`tui.keymap` 只能保存 F1 到 F{MAX_FUNCTION_KEY} 功能键。"
             ));
         }
         KeyCode::Char(' ') => "space".to_string(),
@@ -750,7 +746,7 @@ fn key_parts_to_config_key_spec(
                 return Ok(format_key_spec(modifiers, "minus"));
             }
             if !ch.is_ascii() || ch.is_ascii_control() {
-                return Err("Only printable ASCII keys can be stored in `tui.keymap`.".to_string());
+                return Err("`tui.keymap` 只能保存可打印的 ASCII 按键。".to_string());
             }
             if ch.is_ascii_uppercase() {
                 modifiers.insert(KeyModifiers::SHIFT);
@@ -759,7 +755,7 @@ fn key_parts_to_config_key_spec(
             ch.to_string()
         }
         _ => {
-            return Err("That key is not supported by `tui.keymap`.".to_string());
+            return Err("`tui.keymap` 不支持该按键。".to_string());
         }
     };
 

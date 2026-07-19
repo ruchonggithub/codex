@@ -54,14 +54,13 @@ impl ChatWidget {
                 continue;
             }
             let base_name = if preset.id == "auto" && windows_degraded_sandbox_enabled {
-                format!("{ASK_FOR_APPROVAL_LABEL} (non-admin sandbox)")
+                format!("{ASK_FOR_APPROVAL_LABEL}（非管理员沙箱）")
             } else if preset.id == "auto" {
                 ASK_FOR_APPROVAL_LABEL.to_string()
             } else {
-                preset.label.to_string()
+                Self::approval_preset_label(&preset).to_string()
             };
-            let base_description =
-                Some(preset.description.replace(" (Identical to Agent mode)", ""));
+            let base_description = Some(Self::approval_preset_description(&preset).to_string());
             let approval_disabled_reason = match self
                 .config
                 .permissions
@@ -142,15 +141,15 @@ impl ChatWidget {
 
         let footer_note = show_elevate_sandbox_hint.then(|| {
             vec![
-                "The non-admin sandbox protects your files and prevents network access under most circumstances. However, it carries greater risk if prompt injected. To upgrade to the default sandbox, run ".dim(),
+                "非管理员沙箱在大多数情况下可保护文件并阻止网络访问，但遭遇提示词注入时风险更高。如需升级到默认沙箱，请运行 ".dim(),
                 "/setup-default-sandbox".cyan(),
-                ".".dim(),
+                "。".dim(),
             ]
             .into()
         });
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some("Update Model Permissions".to_string()),
+            title: Some("更新模型权限".to_string()),
             footer_note,
             footer_hint: Some(standard_popup_hint_line()),
             items,
@@ -162,19 +161,19 @@ impl ChatWidget {
     pub(crate) fn open_auto_review_denials_popup(&mut self) {
         if self.review.recent_auto_review_denials.is_empty() {
             self.add_info_message(
-                "No recent auto-review denials in this thread.".to_string(),
-                Some("Denials are recorded after auto-review rejects an action.".to_string()),
+                "此线程中没有最近被自动审查拒绝的操作。".to_string(),
+                Some("自动审查拒绝操作后会在此记录。".to_string()),
             );
             return;
         }
         let Some(thread_id) = self.thread_id() else {
-            self.add_error_message("That thread is no longer available.".to_string());
+            self.add_error_message("该线程已不可用。".to_string());
             return;
         };
 
         let mut items = vec![SelectionItem {
-            name: "Command".to_string(),
-            description: Some("Rationale".to_string()),
+            name: "命令".to_string(),
+            description: Some("理由".to_string()),
             is_disabled: true,
             search_value: Some(String::new()),
             ..Default::default()
@@ -186,10 +185,7 @@ impl ChatWidget {
                 .map(|event| {
                     let id = event.id.clone();
                     let summary = auto_review_denials::action_summary(&event.action);
-                    let rationale = event
-                        .rationale
-                        .as_deref()
-                        .unwrap_or("Auto-review did not include a rationale.");
+                    let rationale = event.rationale.as_deref().unwrap_or("自动审查未提供理由。");
                     SelectionItem {
                         name: summary.clone(),
                         description: Some(rationale.to_string()),
@@ -208,8 +204,8 @@ impl ChatWidget {
         );
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
-            title: Some("Auto-review Denials".to_string()),
-            subtitle: Some("Select a denied action to approve.".to_string()),
+            title: Some("自动审查拒绝记录".to_string()),
+            subtitle: Some("选择一个被拒绝的操作并批准重试。".to_string()),
             footer_hint: Some(standard_popup_hint_line()),
             items,
             is_searchable: true,
@@ -221,7 +217,7 @@ impl ChatWidget {
 
     pub(crate) fn approve_recent_auto_review_denial(&mut self, thread_id: ThreadId, id: String) {
         let Some(event) = self.review.recent_auto_review_denials.take(&id) else {
-            self.add_error_message("That auto-review denial is no longer available.".to_string());
+            self.add_error_message("该自动审查拒绝记录已不可用。".to_string());
             return;
         };
 
@@ -230,11 +226,8 @@ impl ChatWidget {
             op: AppCommand::approve_guardian_denied_action(event),
         });
         self.add_info_message(
-            "Approval recorded for one retry of the selected auto-review denial.".to_string(),
-            Some(
-                "The model will see the approval context; the retry still goes through auto-review."
-                    .to_string(),
-            ),
+            "已批准对所选自动审查拒绝操作重试一次。".to_string(),
+            Some("模型将看到审批上下文；重试操作仍需经过自动审查。".to_string()),
         );
     }
 
@@ -266,10 +259,7 @@ impl ChatWidget {
             ));
             tx.send(AppEvent::UpdateApprovalsReviewer(approvals_reviewer));
             tx.send(AppEvent::InsertHistoryCell(Box::new(
-                history_cell::new_info_event(
-                    format!("Permissions updated to {label}"),
-                    /*hint*/ None,
-                ),
+                history_cell::new_info_event(format!("权限已更新为 {label}"), /*hint*/ None),
             )));
         })]
     }
@@ -399,20 +389,40 @@ impl ChatWidget {
         }
     }
 
+    pub(super) fn approval_preset_label(preset: &ApprovalPreset) -> &'static str {
+        match preset.id {
+            "read-only" => "只读",
+            "auto" => "默认",
+            "full-access" => "完全访问",
+            _ => preset.label,
+        }
+    }
+
+    pub(super) fn approval_preset_description(preset: &ApprovalPreset) -> &'static str {
+        match preset.id {
+            "read-only" => "Codex 可以读取当前工作区中的文件；编辑文件或访问互联网时需要审批。",
+            "auto" => {
+                "Codex 可以读取和编辑当前工作区中的文件并运行命令；访问互联网或编辑其他文件时需要审批。"
+            }
+            "full-access" => "Codex 无需审批即可编辑工作区外的文件并访问互联网，使用时请谨慎。",
+            _ => preset.description,
+        }
+    }
+
     pub(crate) fn open_full_access_confirmation(
         &mut self,
         preset: ApprovalPreset,
         return_to_permissions: bool,
         profile_selection: Option<PermissionProfileSelection>,
     ) {
-        let selected_name = preset.label.to_string();
+        let selected_name = Self::approval_preset_label(&preset).to_string();
         let approval = AskForApproval::from(preset.approval);
         let mut header_children: Vec<Box<dyn Renderable>> = Vec::new();
-        let title_line = Line::from("Enable full access?").bold();
+        let title_line = Line::from("启用完全访问权限？").bold();
         let info_line = Line::from(vec![
-            "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval. "
+            "Codex 以完全访问权限运行时，无需审批即可编辑计算机上的任意文件，并运行可访问网络的命令。"
                 .into(),
-            "Exercise caution when enabling full access. This significantly increases the risk of data loss, leaks, or unexpected behavior."
+            "启用完全访问权限时请谨慎，这会显著增加数据丢失、泄露或意外行为的风险。"
                 .fg(Color::Red),
         ]);
         header_children.push(Box::new(title_line));
@@ -444,15 +454,15 @@ impl ChatWidget {
 
         let items = vec![
             SelectionItem {
-                name: "Yes, continue anyway".to_string(),
-                description: Some("Apply full access for this session".to_string()),
+                name: "是，仍然继续".to_string(),
+                description: Some("为此会话启用完全访问权限".to_string()),
                 actions: accept_actions,
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Cancel".to_string(),
-                description: Some("Go back without enabling full access".to_string()),
+                name: "取消".to_string(),
+                description: Some("返回且不启用完全访问权限".to_string()),
                 actions: deny_actions,
                 dismiss_on_select: true,
                 ..Default::default()

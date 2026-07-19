@@ -3949,7 +3949,7 @@ impl ChatComposer {
                     insert_text: format!("${skill_name}"),
                     search_terms,
                     path: Some(skill.path_to_skills_md.to_string_lossy().into_owned()),
-                    category_tag: Some("[Skill]".to_string()),
+                    category_tag: Some("[技能]".to_string()),
                     sort_rank: 1,
                 });
             }
@@ -4025,7 +4025,7 @@ impl ChatComposer {
                     insert_text: format!("${slug}"),
                     search_terms,
                     path: Some(format!("app://{connector_id}")),
-                    category_tag: Some("[App]".to_string()),
+                    category_tag: Some("[应用]".to_string()),
                     sort_rank: 1,
                 });
             }
@@ -7234,15 +7234,15 @@ mod tests {
 
         let mentions = composer.mention_items();
         assert_eq!(mentions.len(), 3);
-        assert_eq!(mentions[0].category_tag, Some("[Skill]".to_string()));
+        assert_eq!(mentions[0].category_tag, Some("[技能]".to_string()));
         assert_eq!(mentions[0].path, Some(skill_path.display().to_string()));
         assert_eq!(mentions[0].display_name, "Google Calendar".to_string());
-        assert_eq!(mentions[1].category_tag, Some("[Plugin]".to_string()));
+        assert_eq!(mentions[1].category_tag, Some("[插件]".to_string()));
         assert_eq!(
             mentions[1].path,
             Some("plugin://google-calendar@debug".to_string())
         );
-        assert_eq!(mentions[2].category_tag, Some("[App]".to_string()));
+        assert_eq!(mentions[2].category_tag, Some("[应用]".to_string()));
         assert_eq!(mentions[2].path, Some("app://google_calendar".to_string()));
     }
 

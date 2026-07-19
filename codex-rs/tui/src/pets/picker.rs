@@ -89,7 +89,7 @@ pub(crate) fn build_pet_picker_params(
             }
             let pet_id = entry.selector.clone();
             let search_value = if pet_id == DISABLED_PET_ID {
-                "disable disabled hide hidden off none".to_string()
+                "禁用 关闭 隐藏 无 disable disabled hide hidden off none".to_string()
             } else {
                 entry.selector
             };

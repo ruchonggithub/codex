@@ -2,10 +2,10 @@ use crate::legacy_core::config::Config;
 use codex_features::Feature;
 
 pub(crate) const TERMINAL_VISUALIZATION_INSTRUCTIONS: &str = "\
-- This surface is a terminal. When the formatting rules require a visual, include one in the final answer using compact ASCII diagrams, trees, timelines, or tables.
-- Use tables for exact mappings or comparisons rather than collapsing known mappings into prose.
-- Use trees for hierarchy or one-to-many relationships, and diagrams or timelines for sequence, change, or state transferred between records across event order.
-- Use only ASCII characters in visuals.";
+- 当前界面是终端。当格式规则要求使用可视化内容时，请在最终回答中使用紧凑的 ASCII 图、树、时间线或表格。
+- 对精确映射或比较使用表格，不要把已知映射压缩成散文。
+- 对层级或一对多关系使用树；对顺序、变化或按事件顺序在记录间传递的状态使用图或时间线。
+- 可视化内容只能使用 ASCII 字符。";
 
 pub(crate) fn with_terminal_visualization_instructions(
     config: &Config,

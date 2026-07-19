@@ -1950,8 +1950,8 @@ fn parse_bindings(spec: &KeybindingsSpec, path: &str) -> Result<Vec<KeyBinding>,
     for raw in spec.specs() {
         let binding = parse_keybinding(raw.as_str()).ok_or_else(|| {
             format!(
-                "Invalid `{path}` = `{}`. Use values like `ctrl-a`, `shift-enter`, or `page-down`. \
-See the Codex keymap documentation for supported actions and examples.",
+                "`{path}` = `{}` 无效。请使用 `ctrl-a`、`shift-enter` 或 `page-down` 等格式。\
+支持的操作和示例请参阅 Codex 快捷键映射文档。",
                 raw.as_str()
             )
         })?;

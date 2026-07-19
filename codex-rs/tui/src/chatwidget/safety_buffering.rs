@@ -6,10 +6,11 @@ use codex_app_server_protocol::ModelSafetyBufferingUpdatedNotification;
 const SAFETY_BUFFERING_PROMPT_VIEW_ID: &str = "safety-buffering-prompt";
 const SAFETY_BUFFERING_LEARN_MORE_URL: &str = "https://help.openai.com/en/articles/20001326";
 
-const SAFETY_BUFFERING_HEADER: &str =
-    "Our systems are thinking a bit more about this request before responding.";
-const SAFETY_BUFFERING_MESSAGE_WITH_RETRY: &str = "Hang tight or retry with a faster model for a quicker response, though it may be less capable of handling complex requests.";
-const SAFETY_BUFFERING_FOOTER: &str = "No action is required. Codex will keep waiting, and this menu will close when the response is ready.";
+const SAFETY_BUFFERING_HEADER: &str = "系统正在进一步分析此请求，稍后会给出回复。";
+const SAFETY_BUFFERING_MESSAGE_WITH_RETRY: &str =
+    "你可以继续等待，或改用更快的模型重试以更快获得回复；但它处理复杂请求的能力可能较弱。";
+const SAFETY_BUFFERING_FOOTER: &str =
+    "无需操作。Codex 会继续等待，并在回复准备好后自动关闭此菜单。";
 
 #[derive(Debug)]
 struct ActiveSafetyBuffering {
@@ -150,7 +151,7 @@ impl ChatWidget {
         };
         self.bottom_pane.ensure_status_indicator();
         self.set_status(
-            "Working".to_string(),
+            "正在工作".to_string(),
             Some(status_details),
             StatusDetailsCapitalization::Preserve,
             /*details_max_lines*/ 6,
@@ -177,7 +178,7 @@ impl ChatWidget {
             (faster_model, retry_turn, retry_prompt, thread_id)
         {
             items.push(SelectionItem {
-                name: "Retry with a faster model".to_string(),
+                name: "使用更快的模型重试".to_string(),
                 actions: vec![Box::new(move |tx| {
                     tx.send(AppEvent::RetrySafetyBufferedTurn {
                         thread_id,
@@ -193,12 +194,12 @@ impl ChatWidget {
         }
         items.extend([
             SelectionItem {
-                name: "Dismiss and keep waiting".to_string(),
+                name: "关闭提示并继续等待".to_string(),
                 dismiss_on_select: true,
                 ..Default::default()
             },
             SelectionItem {
-                name: "Learn more".to_string(),
+                name: "了解更多".to_string(),
                 actions: vec![Box::new(|tx| {
                     tx.send(AppEvent::OpenUrlInBrowser {
                         url: SAFETY_BUFFERING_LEARN_MORE_URL.to_string(),

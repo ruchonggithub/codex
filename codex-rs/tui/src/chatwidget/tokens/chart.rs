@@ -44,18 +44,18 @@ impl TokenActivityView {
     /// report unsupported arguments instead of silently choosing a view.
     pub(in crate::chatwidget) fn parse(value: &str) -> Option<Self> {
         match value.trim().to_ascii_lowercase().as_str() {
-            "" | "day" | "daily" => Some(Self::Daily),
-            "week" | "weekly" => Some(Self::Weekly),
-            "cumulative" => Some(Self::Cumulative),
+            "" | "day" | "daily" | "日" | "每日" => Some(Self::Daily),
+            "week" | "weekly" | "周" | "每周" => Some(Self::Weekly),
+            "cumulative" | "累计" => Some(Self::Cumulative),
             _ => None,
         }
     }
 
     pub(super) fn label(self) -> &'static str {
         match self {
-            Self::Daily => "Daily",
-            Self::Weekly => "Weekly",
-            Self::Cumulative => "Cumulative",
+            Self::Daily => "每日",
+            Self::Weekly => "每周",
+            Self::Cumulative => "累计",
         }
     }
 }
@@ -68,8 +68,8 @@ pub(super) fn loaded_lines(
 ) -> Vec<Line<'static>> {
     let mut lines = vec![
         vec![
-            Span::from(" Token activity").bold(),
-            Span::styled("   last 12 months", label_style()),
+            Span::from(" Token 活动").bold(),
+            Span::styled("   最近 12 个月", label_style()),
         ]
         .into(),
     ];
@@ -77,7 +77,7 @@ pub(super) fn loaded_lines(
     // Separate the headline numbers from the calendar below.
     lines.push(Line::default());
     let Some(buckets) = response.daily_usage_buckets.as_ref() else {
-        lines.push("   Token activity history unavailable".dim().into());
+        lines.push("   Token 活动历史不可用".dim().into());
         return lines;
     };
 
@@ -95,7 +95,7 @@ fn chart_lines(
     let values = daily_values(buckets, today);
     let shown_columns = shown_columns(width);
     if shown_columns == 0 {
-        lines.push("   Widen terminal to show activity graph".dim().into());
+        lines.push("   请加宽终端以显示活动图表".dim().into());
         return lines;
     }
 
@@ -155,14 +155,14 @@ fn graph_width(width: u16) -> u16 {
 fn summary_lines(response: &GetAccountTokenUsageResponse, width: u16) -> Vec<Line<'static>> {
     let summary = &response.summary;
     let fields = [
-        ("Lifetime", format_optional_tokens(summary.lifetime_tokens)),
-        ("Peak", format_optional_tokens(summary.peak_daily_tokens)),
+        ("总计", format_optional_tokens(summary.lifetime_tokens)),
+        ("峰值", format_optional_tokens(summary.peak_daily_tokens)),
         (
-            "Streak",
+            "连续使用",
             format_streak(summary.current_streak_days, summary.longest_streak_days),
         ),
         (
-            "Longest task",
+            "最长任务",
             format_optional_duration(summary.longest_running_turn_sec),
         ),
     ];
@@ -268,7 +268,7 @@ fn weekday_label(view: TokenActivityView, row: usize) -> Span<'static> {
         // as a coarse Y-axis: peak at the top, baseline at the bottom.
         return Span::styled(
             match row {
-                0 => "max ",
+                0 => "最大",
                 6 => "  0 ",
                 _ => "    ",
             },
@@ -277,13 +277,13 @@ fn weekday_label(view: TokenActivityView, row: usize) -> Span<'static> {
     }
     Span::styled(
         match row {
-            0 => " Su ",
-            1 => " Mo ",
-            2 => " Tu ",
-            3 => " We ",
-            4 => " Th ",
-            5 => " Fr ",
-            6 => " Sa ",
+            0 => " 日 ",
+            1 => " 一 ",
+            2 => " 二 ",
+            3 => " 三 ",
+            4 => " 四 ",
+            5 => " 五 ",
+            6 => " 六 ",
             _ => "    ",
         },
         label_style(),
@@ -291,7 +291,7 @@ fn weekday_label(view: TokenActivityView, row: usize) -> Span<'static> {
 }
 
 fn legend_line(palette: &TokenActivityPalette) -> Line<'static> {
-    let mut spans = vec![Span::styled("   Less ", label_style())];
+    let mut spans = vec![Span::styled("   少 ", label_style())];
     for level in 0..=4 {
         if level > 0 {
             spans.push(" ".into());
@@ -301,7 +301,7 @@ fn legend_line(palette: &TokenActivityPalette) -> Line<'static> {
             palette.for_level(level),
         ));
     }
-    spans.push(Span::styled(" More", label_style()));
+    spans.push(Span::styled(" 多", label_style()));
     spans.into()
 }
 
@@ -311,14 +311,14 @@ fn bar_caption(view: TokenActivityView, values: &[i64]) -> Line<'static> {
     let weeks = weekly_totals(values);
     let (lead, peak) = match view {
         TokenActivityView::Weekly => (
-            "Each column = 1 week · tallest ",
+            "每列 = 1 周 · 最高 ",
             weeks.iter().copied().max().unwrap_or(/*default*/ 0),
         ),
-        TokenActivityView::Cumulative => ("Running total · top ", weeks.iter().sum::<i64>()),
+        TokenActivityView::Cumulative => ("累计总量 · 最高 ", weeks.iter().sum::<i64>()),
         TokenActivityView::Daily => ("", 0),
     };
     if peak <= 0 {
-        return Span::styled("   No token activity in the last 12 months", label_style()).into();
+        return Span::styled("   最近 12 个月没有 Token 活动", label_style()).into();
     }
     vec![
         Span::styled(format!("   {lead}"), label_style()),
@@ -332,9 +332,9 @@ fn bar_caption(view: TokenActivityView, values: &[i64]) -> Line<'static> {
 fn view_footer(active: TokenActivityView) -> Line<'static> {
     let mut spans = vec![Span::styled("   ", label_style())];
     let views = [
-        (TokenActivityView::Daily, "daily"),
-        (TokenActivityView::Weekly, "weekly"),
-        (TokenActivityView::Cumulative, "cumulative"),
+        (TokenActivityView::Daily, "每日"),
+        (TokenActivityView::Weekly, "每周"),
+        (TokenActivityView::Cumulative, "累计"),
     ];
     for (index, (view, name)) in views.into_iter().enumerate() {
         if index > 0 {
@@ -359,7 +359,7 @@ fn month_labels(today: NaiveDate, first_column: usize, shown_columns: usize) -> 
         if date.day() > 7 {
             continue;
         }
-        let label = date.format("%b").to_string();
+        let label = format!("{:02}", date.month());
         let offset = (column - first_column) * 2;
         if offset < last_end || offset + label.len() > cells.len() {
             continue;

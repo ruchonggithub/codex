@@ -239,7 +239,7 @@ use self::side::SideThreadState;
 use self::startup_prompts::*;
 use self::thread_events::*;
 
-const EXTERNAL_EDITOR_HINT: &str = "Save and close external editor to continue.";
+const EXTERNAL_EDITOR_HINT: &str = "保存并关闭外部编辑器以继续。";
 const THREAD_EVENT_CHANNEL_CAPACITY: usize = 32768;
 
 enum ThreadInteractiveRequest {
@@ -695,7 +695,12 @@ fn session_start_error(
     }
 
     let target_label = target_session.display_label();
-    color_eyre::eyre::eyre!("Failed to {action} session from {target_label}: {err}")
+    let action = match action {
+        "resume" => "恢复",
+        "fork" => "派生",
+        _ => action,
+    };
+    color_eyre::eyre::eyre!("无法从{target_label}{action}会话：{err}")
 }
 
 fn archived_session_guidance(err: &color_eyre::eyre::Report) -> Option<String> {

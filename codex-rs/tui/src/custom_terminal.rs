@@ -176,13 +176,13 @@ where
     fn drop(&mut self) {
         // Attempt to restore the cursor state
         if let Err(err) = self.reset_cursor_style() {
-            eprintln!("Failed to reset the cursor style: {err}");
+            eprintln!("重置光标样式失败：{err}");
         }
 
         if self.hidden_cursor
             && let Err(err) = self.show_cursor()
         {
-            eprintln!("Failed to show the cursor: {err}");
+            eprintln!("显示光标失败：{err}");
         }
     }
 }

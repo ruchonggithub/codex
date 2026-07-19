@@ -55,9 +55,8 @@ impl App {
             ..
         } = &mut turn
         else {
-            self.chat_widget.add_error_message(
-                "Failed to retry with a faster model: original turn is unavailable.".to_string(),
-            );
+            self.chat_widget
+                .add_error_message("使用更快的模型重试失败：原始回合不可用。".to_string());
             return;
         };
         *turn_model = model.clone();
@@ -72,7 +71,7 @@ impl App {
 
         if let Err(err) = app_server.turn_interrupt(thread_id, turn_id.clone()).await {
             self.chat_widget
-                .add_error_message(format!("Failed to retry with a faster model: {err}"));
+                .add_error_message(format!("使用更快的模型重试失败：{err}"));
             return;
         }
 
@@ -181,25 +180,23 @@ impl App {
         self.chat_widget.cancel_safety_buffered_retry_submission();
         self.chat_widget.restore_user_message_to_composer(prompt);
         self.chat_widget
-            .add_error_message(format!("Failed to retry with a faster model: {err}"));
+            .add_error_message(format!("使用更快的模型重试失败：{err}"));
     }
 }
 
 fn safety_retry_fork_point(turns: &[Turn], turn_id: &str) -> Result<()> {
     let Some(turn_index) = turns.iter().position(|turn| turn.id == turn_id) else {
         return Err(color_eyre::eyre::eyre!(
-            "interrupted turn {turn_id} is missing from the source thread"
+            "源会话中缺少已中断的回合 {turn_id}"
         ));
     };
     if turn_index + 1 != turns.len() {
         return Err(color_eyre::eyre::eyre!(
-            "interrupted turn {turn_id} is no longer the latest turn"
+            "已中断的回合 {turn_id} 已不是最新回合"
         ));
     }
     if turns[turn_index].status == TurnStatus::InProgress {
-        return Err(color_eyre::eyre::eyre!(
-            "interrupted turn {turn_id} is still in progress"
-        ));
+        return Err(color_eyre::eyre::eyre!("已中断的回合 {turn_id} 仍在进行中"));
     }
 
     let Some(previous_turn) = turns[..turn_index].last() else {
@@ -207,7 +204,7 @@ fn safety_retry_fork_point(turns: &[Turn], turn_id: &str) -> Result<()> {
     };
     if previous_turn.status == TurnStatus::InProgress {
         return Err(color_eyre::eyre::eyre!(
-            "previous turn {} is still in progress",
+            "上一个回合 {} 仍在进行中",
             previous_turn.id
         ));
     }

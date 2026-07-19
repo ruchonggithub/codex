@@ -120,15 +120,14 @@ pub(crate) fn validate_theme_name(name: Option<&str>, codex_home: Option<&Path>)
                 return None;
             }
             return Some(format!(
-                "Custom theme \"{name}\" at {custom_theme_path_display} could not \
-                 be loaded (invalid .tmTheme format). Falling back to the default theme."
+                "无法加载位于 {custom_theme_path_display} 的自定义主题“{name}”\
+                 （.tmTheme 格式无效）。将改用默认主题。"
             ));
         }
     }
     Some(format!(
-        "Theme \"{name}\" not found. Using the default theme. \
-         To use a custom theme, place a .tmTheme file at \
-         {custom_theme_path_display}."
+        "未找到主题“{name}”，将使用默认主题。若要使用自定义主题，请将 .tmTheme 文件放到 \
+         {custom_theme_path_display}。"
     ))
 }
 

@@ -64,16 +64,16 @@ impl PetImageUnsupportedReason {
     fn message(self) -> &'static str {
         match self {
             Self::Tmux => {
-                "Pets are disabled in tmux. Terminal images don’t stay pane-local in tmux and can corrupt scrollback or move between panes. Run Codex outside tmux to use pets."
+                "tmux 中已禁用宠物。终端图像无法可靠地限制在单个 tmux 窗格内，可能破坏回滚内容或移动到其他窗格。请在 tmux 外运行 Codex 以使用宠物。"
             }
             Self::Zellij => {
-                "Pets are disabled in Zellij. Terminal images don’t stay reliably pane-local in Zellij. Run Codex outside Zellij to use pets."
+                "Zellij 中已禁用宠物。终端图像无法可靠地限制在单个 Zellij 窗格内。请在 Zellij 外运行 Codex 以使用宠物。"
             }
             Self::Iterm2TooOld => {
-                "Pets require iTerm2 3.6 or newer. Upgrade iTerm2 to use terminal pets."
+                "宠物需要 iTerm2 3.6 或更高版本。请升级 iTerm2 后再使用终端宠物。"
             }
             Self::Terminal => {
-                "Pets aren’t available in this terminal. Terminal pets need image support, and this terminal environment doesn’t expose a supported image protocol. Try a terminal with Kitty graphics or Sixel support, or run Codex outside tmux."
+                "当前终端无法使用宠物。终端宠物需要图像支持，但此环境未提供受支持的图像协议。请尝试支持 Kitty 图形或 Sixel 的终端，或在 tmux 外运行 Codex。"
             }
         }
     }
@@ -104,7 +104,7 @@ impl FromStr for ProtocolSelection {
             "auto" => Ok(Self::Auto),
             "kitty" => Ok(Self::Kitty),
             "sixel" => Ok(Self::Sixel),
-            other => bail!("unknown protocol {other}; expected auto, kitty, or sixel"),
+            other => bail!("未知协议 {other}；应为 auto、kitty 或 sixel"),
         }
     }
 }

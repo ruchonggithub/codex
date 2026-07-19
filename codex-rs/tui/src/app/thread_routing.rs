@@ -320,7 +320,7 @@ impl App {
                 let permissions = params.permissions.clone().try_into().map_err(|err| {
                     std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
-                        format!("failed to localize requested filesystem paths: {err}"),
+                        format!("转换请求的文件系统路径失败：{err}"),
                     )
                 })?;
                 Some(ThreadInteractiveRequest::Approval(
@@ -854,7 +854,7 @@ impl App {
             }
             Err(err) => {
                 self.chat_widget.add_error_message(format!(
-                    "Failed to resolve app-server request for thread {thread_id}: {err}"
+                    "处理线程 {thread_id} 的 app-server 请求失败：{err}"
                 ));
                 Ok(false)
             }

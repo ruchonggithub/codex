@@ -138,12 +138,12 @@ fn render_prompt_context(context: &IdeContext) -> Option<String> {
     if let Some(active_file) = &context.active_file
         && !active_file.active_selection_content.is_empty()
     {
-        ide_context_section.push_str("\n## Active selection of the file:\n");
+        ide_context_section.push_str("\n## 文件中的当前选区：\n");
         let selection = active_file.active_selection_content.as_str();
         if let Some((truncate_at, _)) = selection.char_indices().nth(MAX_ACTIVE_SELECTION_CHARS) {
             ide_context_section.push_str(&selection[..truncate_at]);
             ide_context_section.push_str(&format!(
-                "\n[Selection truncated to {MAX_ACTIVE_SELECTION_CHARS} characters.]\n"
+                "\n[选区已截断为 {MAX_ACTIVE_SELECTION_CHARS} 个字符。]\n"
             ));
         } else {
             ide_context_section.push_str(selection);
@@ -151,7 +151,7 @@ fn render_prompt_context(context: &IdeContext) -> Option<String> {
     }
 
     if !context.open_tabs.is_empty() {
-        ide_context_section.push_str("\n## Open tabs:\n");
+        ide_context_section.push_str("\n## 已打开的标签页：\n");
         let mut rendered_tabs = 0;
         let mut rendered_tab_chars = 0;
         for tab in &context.open_tabs {

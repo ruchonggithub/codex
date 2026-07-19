@@ -302,7 +302,7 @@ fn keymap_debug_tab() -> SelectionTab {
             actions: vec![Box::new(|tx| {
                 tx.send(AppEvent::OpenKeymapDebug);
             })],
-            search_value: Some("debug inspect keypress key terminal detected actions".to_string()),
+            search_value: Some("调试 检查 按键 终端 检测 操作 debug inspect keypress".to_string()),
             ..Default::default()
         }],
     }
@@ -425,30 +425,27 @@ fn keymap_row_prefix(row: &KeymapActionRow) -> Vec<Span<'static>> {
 
 fn keymap_header(description: String, summary: String) -> Box<dyn Renderable> {
     let mut header = ColumnRenderable::new();
-    header.push(Line::from("Keymap".bold()));
+    header.push(Line::from("快捷键映射".bold()));
     header.push(Line::from(description.dim()));
     header.push(Line::from(summary.dim()));
     Box::new(header)
 }
 
 fn action_count_line(count: usize) -> String {
-    match count {
-        1 => "1 action.".to_string(),
-        _ => format!("{count} actions."),
-    }
+    format!("{count} 个操作。")
 }
 
 fn keymap_picker_hint_line() -> Line<'static> {
     let style = accent_style();
     Line::from(vec![
         "left/right".set_style(style),
-        " group · ".dim(),
+        " 切换分组 · ".dim(),
         "enter".set_style(style),
-        " edit shortcut · ".dim(),
+        " 编辑快捷键 · ".dim(),
         "*".set_style(style),
-        " custom · ".dim(),
+        " 自定义 · ".dim(),
         "-".set_style(style),
-        " unbound · ".dim(),
+        " 未绑定 · ".dim(),
         "esc".set_style(style),
         " 关闭".dim(),
     ])
@@ -458,7 +455,7 @@ fn keymap_debug_hint_line() -> Line<'static> {
     let style = accent_style();
     Line::from(vec![
         "enter".set_style(style),
-        " start inspector · ".dim(),
+        " 开始检查 · ".dim(),
         "esc".set_style(style),
         " 关闭".dim(),
     ])

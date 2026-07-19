@@ -5,8 +5,6 @@ use ratatui::style::Styled;
 use ratatui::style::Stylize;
 use ratatui::text::Span;
 
-const TAG_WIDTH: usize = "Plugin".len();
-
 #[derive(Clone, Debug)]
 pub(crate) enum Selection {
     File(PathBuf),
@@ -36,15 +34,15 @@ impl MentionType {
             Self::File => base_style.cyan(),
             Self::Directory => base_style,
         };
-        format!("{:<width$}", self.label(), width = TAG_WIDTH).set_style(style)
+        self.label().set_style(style)
     }
 
     fn label(self) -> &'static str {
         match self {
-            Self::Plugin => "Plugin",
-            Self::Skill => "Skill",
-            Self::File => "File",
-            Self::Directory => "Dir",
+            Self::Plugin => "插件  ",
+            Self::Skill => "技能  ",
+            Self::File => "文件  ",
+            Self::Directory => "文件夹",
         }
     }
 }

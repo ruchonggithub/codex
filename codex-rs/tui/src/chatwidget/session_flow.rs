@@ -203,7 +203,7 @@ impl ChatWidget {
         {
             vec![
                 "• ".dim(),
-                "Thread forked from ".into(),
+                "线程派生自 ".into(),
                 name.cyan(),
                 " (".into(),
                 forked_from_id_text.cyan(),
@@ -211,12 +211,7 @@ impl ChatWidget {
             ]
             .into()
         } else {
-            vec![
-                "• ".dim(),
-                "Thread forked from ".into(),
-                forked_from_id_text.cyan(),
-            ]
-            .into()
+            vec!["• ".dim(), "线程派生自 ".into(), forked_from_id_text.cyan()].into()
         };
         self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
             PlainHistoryCell::new(vec![line]),
@@ -224,11 +219,7 @@ impl ChatWidget {
     }
 
     pub(crate) fn emit_prompt_edit_thread_event(&mut self) {
-        let line: Line<'static> = vec![
-            "• ".dim(),
-            "You’re continuing from this point in a new conversation".into(),
-        ]
-        .into();
+        let line: Line<'static> = vec!["• ".dim(), "你将从此处开始新的对话".into()].into();
         self.app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
             PlainHistoryCell::new(vec![line]),
         )));

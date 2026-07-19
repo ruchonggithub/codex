@@ -31,7 +31,7 @@ impl App {
                 },
             )
             .await
-            .map_err(|err| format!("failed to reject app-server request: {err}"))
+            .map_err(|err| format!("拒绝 app-server 请求失败：{err}"))
     }
 }
 
@@ -113,7 +113,7 @@ impl PendingAppServerRequests {
                 {
                     return Some(UnsupportedAppServerRequest {
                         request_id: request_id.clone(),
-                        message: format!("failed to localize requested filesystem paths: {err}"),
+                        message: format!("转换请求的文件系统路径失败：{err}"),
                     });
                 }
                 self.permissions_approvals
@@ -143,34 +143,32 @@ impl PendingAppServerRequests {
             ServerRequest::DynamicToolCall { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "Dynamic tool calls are not available in TUI yet.".to_string(),
+                    message: "TUI 暂不支持动态工具调用。".to_string(),
                 })
             }
             ServerRequest::ChatgptAuthTokensRefresh { .. } => None,
             ServerRequest::AttestationGenerate { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "Attestation generation is not available in TUI.".to_string(),
+                    message: "TUI 不支持生成证明。".to_string(),
                 })
             }
             ServerRequest::CurrentTimeRead { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "External current time is not available in TUI.".to_string(),
+                    message: "TUI 不支持读取外部当前时间。".to_string(),
                 })
             }
             ServerRequest::ApplyPatchApproval { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "Legacy patch approval requests are not available in TUI yet."
-                        .to_string(),
+                    message: "TUI 暂不支持旧版补丁审批请求。".to_string(),
                 })
             }
             ServerRequest::ExecCommandApproval { request_id, .. } => {
                 Some(UnsupportedAppServerRequest {
                     request_id: request_id.clone(),
-                    message: "Legacy command approval requests are not available in TUI yet."
-                        .to_string(),
+                    message: "TUI 暂不支持旧版命令审批请求。".to_string(),
                 })
             }
         }
@@ -194,11 +192,7 @@ impl PendingAppServerRequests {
                         result: serde_json::to_value(CommandExecutionRequestApprovalResponse {
                             decision: decision.clone(),
                         })
-                        .map_err(|err| {
-                            format!(
-                                "failed to serialize command execution approval response: {err}"
-                            )
-                        })?,
+                        .map_err(|err| format!("序列化命令执行审批响应失败：{err}"))?,
                     })
                 })
                 .transpose()?,
@@ -211,9 +205,7 @@ impl PendingAppServerRequests {
                         result: serde_json::to_value(FileChangeRequestApprovalResponse {
                             decision: decision.clone(),
                         })
-                        .map_err(|err| {
-                            format!("failed to serialize file change approval response: {err}")
-                        })?,
+                        .map_err(|err| format!("序列化文件更改审批响应失败：{err}"))?,
                     })
                 })
                 .transpose()?,
@@ -230,9 +222,7 @@ impl PendingAppServerRequests {
                             scope: response.scope.into(),
                             strict_auto_review: response.strict_auto_review.then_some(true),
                         })
-                        .map_err(|err| {
-                            format!("failed to serialize permissions approval response: {err}")
-                        })?,
+                        .map_err(|err| format!("序列化权限审批响应失败：{err}"))?,
                     })
                 })
                 .transpose()?,
@@ -241,9 +231,8 @@ impl PendingAppServerRequests {
                 .map(|pending| {
                     Ok::<AppServerRequestResolution, String>(AppServerRequestResolution {
                         request_id: pending.request_id,
-                        result: serde_json::to_value(response).map_err(|err| {
-                            format!("failed to serialize request_user_input response: {err}")
-                        })?,
+                        result: serde_json::to_value(response)
+                            .map_err(|err| format!("序列化用户输入响应失败：{err}"))?,
                     })
                 })
                 .transpose()?,
@@ -267,9 +256,7 @@ impl PendingAppServerRequests {
                             content: content.clone(),
                             meta: meta.clone(),
                         })
-                        .map_err(|err| {
-                            format!("failed to serialize MCP elicitation response: {err}")
-                        })?,
+                        .map_err(|err| format!("序列化 MCP 信息征询响应失败：{err}"))?,
                     })
                 })
                 .transpose()?,

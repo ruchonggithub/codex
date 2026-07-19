@@ -447,7 +447,7 @@ impl HookRunCell {
         match &self.state {
             HookRunState::VisibleRunning { start_time, .. }
             | HookRunState::QuietLinger { start_time, .. } => {
-                let hook_text = format!("Running {label} hook");
+                let hook_text = format!("正在运行 {label} 钩子");
                 push_running_hook_header(
                     lines,
                     &hook_text,
@@ -457,13 +457,19 @@ impl HookRunCell {
                 );
             }
             HookRunState::Completed { status, entries } => {
-                let status_text = format!("{status:?}").to_lowercase();
+                let status_text = match status {
+                    HookRunStatus::Running => "运行中",
+                    HookRunStatus::Completed => "已完成",
+                    HookRunStatus::Blocked => "已阻止",
+                    HookRunStatus::Failed => "失败",
+                    HookRunStatus::Stopped => "已停止",
+                };
                 let bullet = hook_completed_bullet(*status, entries);
                 lines.push(
                     vec![
                         bullet,
                         " ".into(),
-                        format!("{label} hook ({status_text})").into(),
+                        format!("{label} 钩子（{status_text}）").into(),
                     ]
                     .into(),
                 );
@@ -531,7 +537,7 @@ fn hook_context_preview_lines(text: &str, width: u16) -> Vec<Line<'static>> {
     wrapped.truncate(retained_rows);
     let hint = vec![
         HOOK_OUTPUT_BODY_INDENT.into(),
-        format!("… +{omitted_rows} lines ({TRANSCRIPT_HINT})").dim(),
+        format!("… 另有 {omitted_rows} 行（{TRANSCRIPT_HINT}）").dim(),
     ]
     .into();
     wrapped.push(truncate_line_with_ellipsis_if_overflow(hint, width));
@@ -712,9 +718,9 @@ fn push_running_hook_group(
     push_hook_line_separator(lines);
     let label = hook_event_label(group.key.event_name);
     let hook_text = if group.count == 1 {
-        format!("Running {label} hook")
+        format!("正在运行 {label} 钩子")
     } else {
-        format!("Running {} {label} hooks", group.count)
+        format!("正在运行 {} 个 {label} 钩子", group.count)
     };
     push_running_hook_header(
         lines,
@@ -803,27 +809,27 @@ fn hook_completed_bullet(status: HookRunStatus, entries: &[HookOutputEntry]) -> 
 
 fn hook_output_prefix(kind: HookOutputEntryKind) -> &'static str {
     match kind {
-        HookOutputEntryKind::Warning => "warning: ",
-        HookOutputEntryKind::Stop => "stop: ",
-        HookOutputEntryKind::Feedback => "feedback: ",
-        HookOutputEntryKind::Context => "hook context: ",
-        HookOutputEntryKind::Error => "error: ",
+        HookOutputEntryKind::Warning => "警告：",
+        HookOutputEntryKind::Stop => "停止：",
+        HookOutputEntryKind::Feedback => "反馈：",
+        HookOutputEntryKind::Context => "钩子上下文：",
+        HookOutputEntryKind::Error => "错误：",
     }
 }
 
 fn hook_event_label(event_name: HookEventName) -> &'static str {
     match event_name {
-        HookEventName::PreToolUse => "PreToolUse",
-        HookEventName::PermissionRequest => "PermissionRequest",
-        HookEventName::PostToolUse => "PostToolUse",
-        HookEventName::PreCompact => "PreCompact",
-        HookEventName::PostCompact => "PostCompact",
-        HookEventName::SessionStart => "SessionStart",
-        HookEventName::SessionEnd => "SessionEnd",
-        HookEventName::UserPromptSubmit => "UserPromptSubmit",
-        HookEventName::SubagentStart => "SubagentStart",
-        HookEventName::SubagentStop => "SubagentStop",
-        HookEventName::Stop => "Stop",
+        HookEventName::PreToolUse => "工具使用前",
+        HookEventName::PermissionRequest => "权限请求",
+        HookEventName::PostToolUse => "工具使用后",
+        HookEventName::PreCompact => "压缩前",
+        HookEventName::PostCompact => "压缩后",
+        HookEventName::SessionStart => "会话开始",
+        HookEventName::SessionEnd => "会话结束",
+        HookEventName::UserPromptSubmit => "用户提示提交",
+        HookEventName::SubagentStart => "子代理启动",
+        HookEventName::SubagentStop => "子代理停止",
+        HookEventName::Stop => "停止",
     }
 }
 

@@ -44,30 +44,30 @@ impl StatusSurfacePreviewItem {
             StatusSurfacePreviewItem::ProjectName => "my-project",
             StatusSurfacePreviewItem::ProjectRoot => "my-project",
             StatusSurfacePreviewItem::CurrentDir => "~/my-project/subdir",
-            StatusSurfacePreviewItem::Status => "Working",
-            StatusSurfacePreviewItem::ThreadTitle => "thread title",
+            StatusSurfacePreviewItem::Status => "正在工作",
+            StatusSurfacePreviewItem::ThreadTitle => "会话标题",
             StatusSurfacePreviewItem::GitBranch => "feat/awesome-feature",
             StatusSurfacePreviewItem::PullRequestNumber => "PR #123",
             StatusSurfacePreviewItem::BranchChanges => "+12 -3",
-            StatusSurfacePreviewItem::Permissions => "Workspace",
+            StatusSurfacePreviewItem::Permissions => "工作区",
             StatusSurfacePreviewItem::ApprovalMode => "on-request",
-            StatusSurfacePreviewItem::ContextRemaining => "Context 0% left",
-            StatusSurfacePreviewItem::ContextUsed => "Context 0% used",
+            StatusSurfacePreviewItem::ContextRemaining => "上下文剩余 0%",
+            StatusSurfacePreviewItem::ContextUsed => "上下文已用 0%",
             StatusSurfacePreviewItem::FiveHourLimit => "primary 0%",
             StatusSurfacePreviewItem::WeeklyLimit => "secondary 0%",
             StatusSurfacePreviewItem::CodexVersion => "0.0.0",
-            StatusSurfacePreviewItem::ContextWindowSize => "0 window",
-            StatusSurfacePreviewItem::UsedTokens => "0 used",
-            StatusSurfacePreviewItem::TotalInputTokens => "0 in",
-            StatusSurfacePreviewItem::TotalOutputTokens => "0 out",
+            StatusSurfacePreviewItem::ContextWindowSize => "上下文窗口 0",
+            StatusSurfacePreviewItem::UsedTokens => "已用 0",
+            StatusSurfacePreviewItem::TotalInputTokens => "输入 0",
+            StatusSurfacePreviewItem::TotalOutputTokens => "输出 0",
             StatusSurfacePreviewItem::SessionId => "550e8400-e29b-41d4",
-            StatusSurfacePreviewItem::FastMode => "Fast on",
-            StatusSurfacePreviewItem::RawOutput => "raw output",
-            StatusSurfacePreviewItem::WorkspaceHeadline => "Workspace headline",
+            StatusSurfacePreviewItem::FastMode => "快速模式已开启",
+            StatusSurfacePreviewItem::RawOutput => "原始输出",
+            StatusSurfacePreviewItem::WorkspaceHeadline => "工作区摘要",
             StatusSurfacePreviewItem::Model => "gpt-5.2-codex",
             StatusSurfacePreviewItem::ModelWithReasoning => "gpt-5.2-codex medium",
             StatusSurfacePreviewItem::Reasoning => "medium",
-            StatusSurfacePreviewItem::TaskProgress => "Tasks 0/0",
+            StatusSurfacePreviewItem::TaskProgress => "任务 0/0",
         }
     }
 
@@ -244,37 +244,37 @@ fn rate_limit_preview_copy(value: &str) -> Option<RateLimitPreviewCopy> {
     if value.starts_with("secondary usage ") {
         Some(RateLimitPreviewCopy {
             name: "secondary-usage-limit",
-            description: "Remaining usage on the secondary usage limit (omitted when unavailable)",
+            description: "次要用量限制的剩余用量（不可用时省略）",
         })
     } else if value.starts_with("usage ") {
         Some(RateLimitPreviewCopy {
             name: "usage-limit",
-            description: "Remaining usage on the primary usage limit (omitted when unavailable)",
+            description: "主要用量限制的剩余用量（不可用时省略）",
         })
     } else if value.starts_with("5h ") {
         Some(RateLimitPreviewCopy {
             name: "five-hour-limit",
-            description: "Remaining usage on the 5-hour usage limit (omitted when unavailable)",
+            description: "5 小时用量限制的剩余用量（不可用时省略）",
         })
     } else if value.starts_with("daily ") {
         Some(RateLimitPreviewCopy {
             name: "daily-limit",
-            description: "Remaining usage on the daily usage limit (omitted when unavailable)",
+            description: "每日用量限制的剩余用量（不可用时省略）",
         })
     } else if value.starts_with("weekly ") {
         Some(RateLimitPreviewCopy {
             name: "weekly-limit",
-            description: "Remaining usage on the weekly usage limit (omitted when unavailable)",
+            description: "每周用量限制的剩余用量（不可用时省略）",
         })
     } else if value.starts_with("monthly ") {
         Some(RateLimitPreviewCopy {
             name: "monthly-limit",
-            description: "Remaining usage on the monthly usage limit (omitted when unavailable)",
+            description: "每月用量限制的剩余用量（不可用时省略）",
         })
     } else if value.starts_with("annual ") {
         Some(RateLimitPreviewCopy {
             name: "annual-limit",
-            description: "Remaining usage on the annual usage limit (omitted when unavailable)",
+            description: "每年用量限制的剩余用量（不可用时省略）",
         })
     } else {
         None

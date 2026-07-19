@@ -112,9 +112,9 @@ fn copy_to_clipboard_with(
         .map_err(|terminal_err| {
             tracing::warn!("terminal clipboard copy failed over SSH: {terminal_err}");
             if environment.tmux_session {
-                format!("terminal clipboard copy failed over SSH: {terminal_err}")
+                format!("通过 SSH 复制到终端剪贴板失败：{terminal_err}")
             } else {
-                format!("OSC 52 clipboard copy failed over SSH: {terminal_err}")
+                format!("通过 SSH 使用 OSC 52 复制到剪贴板失败：{terminal_err}")
             }
         });
     }
@@ -142,11 +142,11 @@ fn copy_to_clipboard_with(
                         .map_err(|terminal_err| {
                             if environment.tmux_session {
                                 format!(
-                                    "native clipboard: {native_err}; WSL fallback: {wsl_err}; terminal fallback: {terminal_err}"
+                                    "原生剪贴板：{native_err}；WSL 回退：{wsl_err}；终端回退：{terminal_err}"
                                 )
                             } else {
                                 format!(
-                                    "native clipboard: {native_err}; WSL fallback: {wsl_err}; OSC 52 fallback: {terminal_err}"
+                                    "原生剪贴板：{native_err}；WSL 回退：{wsl_err}；OSC 52 回退：{terminal_err}"
                                 )
                             }
                         });
@@ -165,9 +165,9 @@ fn copy_to_clipboard_with(
             .map(|()| None)
             .map_err(|terminal_err| {
                 if environment.tmux_session {
-                    format!("native clipboard: {native_err}; terminal fallback: {terminal_err}")
+                    format!("原生剪贴板：{native_err}；终端回退：{terminal_err}")
                 } else {
-                    format!("native clipboard: {native_err}; OSC 52 fallback: {terminal_err}")
+                    format!("原生剪贴板：{native_err}；OSC 52 回退：{terminal_err}")
                 }
             })
         }
@@ -186,9 +186,8 @@ fn terminal_clipboard_copy_with(
             Ok(()) => return Ok(()),
             Err(tmux_err) => {
                 tracing::warn!("tmux clipboard copy failed: {tmux_err}, falling back to OSC 52");
-                return osc52_copy_fn(text).map_err(|osc_err| {
-                    format!("tmux clipboard: {tmux_err}; OSC 52 fallback: {osc_err}")
-                });
+                return osc52_copy_fn(text)
+                    .map_err(|osc_err| format!("tmux 剪贴板：{tmux_err}；OSC 52 回退：{osc_err}"));
             }
         }
     }
@@ -228,13 +227,12 @@ fn arboard_copy(text: &str) -> Result<Option<ClipboardLease>, String> {
     let _stderr_lock = STDERR_SUPPRESSION_MUTEX
         .get_or_init(|| std::sync::Mutex::new(()))
         .lock()
-        .map_err(|_| "stderr suppression lock poisoned".to_string())?;
+        .map_err(|_| "标准错误抑制锁已中毒".to_string())?;
     let _guard = SuppressStderr::new();
-    let mut clipboard =
-        arboard::Clipboard::new().map_err(|e| format!("clipboard unavailable: {e}"))?;
+    let mut clipboard = arboard::Clipboard::new().map_err(|e| format!("剪贴板不可用：{e}"))?;
     clipboard
         .set_text(text)
-        .map_err(|e| format!("failed to set clipboard text: {e}"))?;
+        .map_err(|e| format!("设置剪贴板文本失败：{e}"))?;
     Ok(None)
 }
 
@@ -246,17 +244,16 @@ fn arboard_copy(text: &str) -> Result<Option<ClipboardLease>, String> {
 #[cfg(target_os = "linux")]
 fn arboard_copy(text: &str) -> Result<Option<ClipboardLease>, String> {
     let _guard = SuppressStderr::new();
-    let mut clipboard =
-        arboard::Clipboard::new().map_err(|e| format!("clipboard unavailable: {e}"))?;
+    let mut clipboard = arboard::Clipboard::new().map_err(|e| format!("剪贴板不可用：{e}"))?;
     clipboard
         .set_text(text)
-        .map_err(|e| format!("failed to set clipboard text: {e}"))?;
+        .map_err(|e| format!("设置剪贴板文本失败：{e}"))?;
     Ok(Some(ClipboardLease::native_linux(clipboard)))
 }
 
 #[cfg(target_os = "android")]
 fn arboard_copy(_text: &str) -> Result<Option<ClipboardLease>, String> {
-    Err("native clipboard unavailable on Android".to_string())
+    Err("Android 上无法使用原生剪贴板".to_string())
 }
 
 /// Copy text into the Windows clipboard from a WSL process.
@@ -272,25 +269,25 @@ fn wsl_clipboard_copy(text: &str) -> Result<(), String> {
             "[Console]::InputEncoding = [System.Text.Encoding]::UTF8; $ErrorActionPreference = 'Stop'; $text = [Console]::In.ReadToEnd(); Set-Clipboard -Value $text",
         ])
         .spawn()
-        .map_err(|e| format!("failed to spawn powershell.exe: {e}"))?;
+        .map_err(|e| format!("启动 powershell.exe 失败：{e}"))?;
 
     let Some(mut stdin) = child.stdin.take() else {
         let _ = child.kill();
         let _ = child.wait();
-        return Err("failed to open powershell.exe stdin".to_string());
+        return Err("打开 powershell.exe 标准输入失败".to_string());
     };
 
     if let Err(err) = stdin.write_all(text.as_bytes()) {
         let _ = child.kill();
         let _ = child.wait();
-        return Err(format!("failed to write to powershell.exe: {err}"));
+        return Err(format!("写入 powershell.exe 失败：{err}"));
     }
 
     drop(stdin);
 
     let output = child
         .wait_with_output()
-        .map_err(|e| format!("failed to wait for powershell.exe: {e}"))?;
+        .map_err(|e| format!("等待 powershell.exe 失败：{e}"))?;
 
     if output.status.success() {
         Ok(())
@@ -298,16 +295,16 @@ fn wsl_clipboard_copy(text: &str) -> Result<(), String> {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         if stderr.is_empty() {
             let status = output.status;
-            Err(format!("powershell.exe exited with status {status}"))
+            Err(format!("powershell.exe 已退出，状态为 {status}"))
         } else {
-            Err(format!("powershell.exe failed: {stderr}"))
+            Err(format!("powershell.exe 失败：{stderr}"))
         }
     }
 }
 
 #[cfg(not(target_os = "linux"))]
 fn wsl_clipboard_copy(_text: &str) -> Result<(), String> {
-    Err("WSL clipboard fallback unavailable on this platform".to_string())
+    Err("此平台无法使用 WSL 剪贴板回退方案".to_string())
 }
 
 /// Copy text through tmux's native clipboard integration.
@@ -327,25 +324,25 @@ fn tmux_clipboard_copy(text: &str) -> Result<(), String> {
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
         .spawn()
-        .map_err(|e| format!("failed to spawn tmux: {e}"))?;
+        .map_err(|e| format!("启动 tmux 失败：{e}"))?;
 
     let Some(mut stdin) = child.stdin.take() else {
         let _ = child.kill();
         let _ = child.wait();
-        return Err("failed to open tmux stdin".to_string());
+        return Err("打开 tmux 标准输入失败".to_string());
     };
 
     if let Err(err) = stdin.write_all(text.as_bytes()) {
         let _ = child.kill();
         let _ = child.wait();
-        return Err(format!("failed to write to tmux: {err}"));
+        return Err(format!("写入 tmux 失败：{err}"));
     }
 
     drop(stdin);
 
     let output = child
         .wait_with_output()
-        .map_err(|e| format!("failed to wait for tmux: {e}"))?;
+        .map_err(|e| format!("等待 tmux 失败：{e}"))?;
 
     if output.status.success() {
         Ok(())
@@ -353,9 +350,9 @@ fn tmux_clipboard_copy(text: &str) -> Result<(), String> {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         if stderr.is_empty() {
             let status = output.status;
-            Err(format!("tmux exited with status {status}"))
+            Err(format!("tmux 已退出，状态为 {status}"))
         } else {
-            Err(format!("tmux failed: {stderr}"))
+            Err(format!("tmux 失败：{stderr}"))
         }
     }
 }
@@ -367,12 +364,12 @@ fn tmux_clipboard_copy_ready(
 ) -> Result<(), String> {
     let set_clipboard = set_clipboard_fn()?;
     if set_clipboard.trim() == "off" {
-        return Err("tmux clipboard forwarding is disabled".to_string());
+        return Err("tmux 剪贴板转发已禁用".to_string());
     }
 
     let tmux_info = tmux_info_fn()?;
     if tmux_info.lines().any(|line| line.contains("Ms: [missing]")) {
-        return Err("tmux clipboard forwarding is unavailable: missing Ms capability".to_string());
+        return Err("tmux 剪贴板转发不可用：缺少 Ms 能力".to_string());
     }
 
     Ok(())
@@ -382,17 +379,17 @@ fn tmux_command_output<const N: usize>(args: [&str; N]) -> Result<String, String
     let output = std::process::Command::new("tmux")
         .args(args)
         .output()
-        .map_err(|e| format!("failed to spawn tmux: {e}"))?;
+        .map_err(|e| format!("启动 tmux 失败：{e}"))?;
 
     if output.status.success() {
-        String::from_utf8(output.stdout).map_err(|e| format!("tmux output was not UTF-8: {e}"))
+        String::from_utf8(output.stdout).map_err(|e| format!("tmux 输出不是 UTF-8：{e}"))
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         if stderr.is_empty() {
             let status = output.status;
-            Err(format!("tmux exited with status {status}"))
+            Err(format!("tmux 已退出，状态为 {status}"))
         } else {
-            Err(format!("tmux failed: {stderr}"))
+            Err(format!("tmux 失败：{stderr}"))
         }
     }
 }
@@ -478,17 +475,15 @@ fn osc52_copy(text: &str) -> Result<(), String> {
 fn write_osc52_to_writer(mut writer: impl Write, sequence: &str) -> Result<(), String> {
     writer
         .write_all(sequence.as_bytes())
-        .map_err(|e| format!("failed to write OSC 52: {e}"))?;
-    writer
-        .flush()
-        .map_err(|e| format!("failed to flush OSC 52: {e}"))
+        .map_err(|e| format!("写入 OSC 52 失败：{e}"))?;
+    writer.flush().map_err(|e| format!("刷新 OSC 52 失败：{e}"))
 }
 
 fn osc52_sequence(text: &str, tmux: bool) -> Result<String, String> {
     let raw_bytes = text.len();
     if raw_bytes > OSC52_MAX_RAW_BYTES {
         return Err(format!(
-            "OSC 52 payload too large ({raw_bytes} bytes; max {OSC52_MAX_RAW_BYTES})"
+            "OSC 52 负载过大（{raw_bytes} 字节；最大 {OSC52_MAX_RAW_BYTES} 字节）"
         ));
     }
 

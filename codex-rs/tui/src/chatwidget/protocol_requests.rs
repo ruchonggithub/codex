@@ -35,9 +35,7 @@ impl ChatWidget {
                 match request_permissions_from_params(params) {
                     Ok(event) => self.on_request_permissions(event),
                     Err(err) => {
-                        self.add_error_message(format!(
-                            "failed to localize requested filesystem paths: {err}"
-                        ));
+                        self.add_error_message(format!("转换请求的文件系统路径失败：{err}"));
                     }
                 }
             }

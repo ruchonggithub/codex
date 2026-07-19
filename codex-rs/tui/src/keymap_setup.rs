@@ -85,7 +85,7 @@ pub(crate) enum KeymapEditOutcome {
 }
 
 fn key_binding_span(binding: &str) -> ratatui::text::Span<'static> {
-    if binding == "unbound" {
+    if matches!(binding, "unbound" | "未绑定") {
         "未绑定".dim()
     } else {
         binding.to_string().cyan()
